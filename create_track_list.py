@@ -1,0 +1,334 @@
+import tkinter as tk
+import tkinter.scrolledtext as tkst
+from pathlib import Path
+from tkinter import simpledialog, ttk
+
+import font_manager as fonts
+import track_library as lib
+from validation import (
+    get_valid_position,
+    normalise_playlist_name,
+    normalise_track_number,
+)
+
+PROJECT_DIR = Path(__file__).resolve().parent
+PLAYLIST_DIR = PROJECT_DIR / "playlists"
+PLAYLIST_DIR.mkdir(exist_ok=True)
+
+
+def set_text(text_area, content):
+    text_area.configure(state="normal")
+    text_area.delete("1.0", tk.END)
+    text_area.insert("1.0", content)
+    text_area.configure(state="disabled")
+
+
+class CreateTrackList:
+    def __init__(self, window):
+        self.window = window
+        self.playlist = []
+
+        window.geometry("1160x700")
+        window.title("Create Track List")
+        fonts.apply_theme(window)
+        window.columnconfigure(0, weight=1)
+        window.columnconfigure(1, weight=1)
+
+        title_lbl = ttk.Label(window, text="Playlist Builder", style="Title.TLabel")
+        title_lbl.grid(row=0, column=0, columnspan=2, sticky="w", padx=12, pady=(12, 6))
+
+        add_frame = ttk.LabelFrame(window, text="Add Tracks", style="Section.TLabelframe")
+        add_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=12, pady=6)
+
+        list_tracks_btn = ttk.Button(add_frame, text="List All Tracks", command=self.list_tracks_clicked)
+        list_tracks_btn.grid(row=0, column=0, padx=8, pady=8)
+
+        enter_lbl = ttk.Label(add_frame, text="Track Number")
+        enter_lbl.grid(row=0, column=1, padx=8, pady=8)
+
+        self.input_txt = ttk.Entry(add_frame, width=8)
+        self.input_txt.grid(row=0, column=2, padx=8, pady=8)
+
+        add_track_btn = ttk.Button(add_frame, text="Add Track", command=self.add_track_clicked)
+        add_track_btn.grid(row=0, column=3, padx=8, pady=8)
+
+        remove_lbl = ttk.Label(add_frame, text="Remove Position")
+        remove_lbl.grid(row=0, column=4, padx=8, pady=8)
+
+        self.remove_input = ttk.Entry(add_frame, width=8)
+        self.remove_input.grid(row=0, column=5, padx=8, pady=8)
+
+        remove_btn = ttk.Button(add_frame, text="Remove Track", command=self.remove_track_clicked)
+        remove_btn.grid(row=0, column=6, padx=8, pady=8)
+
+        move_frame = ttk.LabelFrame(window, text="Reorder Playlist", style="Section.TLabelframe")
+        move_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=12, pady=6)
+
+        move_lbl = ttk.Label(move_frame, text="Position")
+        move_lbl.grid(row=0, column=0, padx=8, pady=8)
+
+        self.move_input = ttk.Entry(move_frame, width=8)
+        self.move_input.grid(row=0, column=1, padx=8, pady=8)
+
+        move_up_btn = ttk.Button(move_frame, text="Move Up", command=self.move_up_clicked)
+        move_up_btn.grid(row=0, column=2, padx=8, pady=8)
+
+        move_down_btn = ttk.Button(move_frame, text="Move Down", command=self.move_down_clicked)
+        move_down_btn.grid(row=0, column=3, padx=8, pady=8)
+
+        play_btn = ttk.Button(move_frame, text="Play Playlist", command=self.play_playlist_clicked)
+        play_btn.grid(row=0, column=4, padx=8, pady=8)
+
+        reset_btn = ttk.Button(move_frame, text="Reset Playlist", command=self.reset_playlist_clicked)
+        reset_btn.grid(row=0, column=5, padx=8, pady=8)
+
+        save_frame = ttk.LabelFrame(window, text="Save / Load Playlists", style="Section.TLabelframe")
+        save_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=12, pady=6)
+
+        playlist_name_lbl = ttk.Label(save_frame, text="Playlist Name")
+        playlist_name_lbl.grid(row=0, column=0, padx=8, pady=8)
+
+        self.playlist_name_input = ttk.Entry(save_frame, width=24)
+        self.playlist_name_input.grid(row=0, column=1, padx=8, pady=8)
+        self.playlist_name_input.insert(0, "my_playlist")
+
+        save_btn = ttk.Button(save_frame, text="Save Playlist", command=self.save_playlist_clicked)
+        save_btn.grid(row=0, column=2, padx=8, pady=8)
+
+        load_btn = ttk.Button(save_frame, text="Load Playlist", command=self.load_playlist_clicked)
+        load_btn.grid(row=0, column=3, padx=8, pady=8)
+
+        list_playlists_btn = ttk.Button(save_frame, text="List Playlists", command=self.list_playlists_clicked)
+        list_playlists_btn.grid(row=0, column=4, padx=8, pady=8)
+
+        delete_playlist_btn = ttk.Button(save_frame, text="Delete Playlist", command=self.delete_playlist_clicked)
+        delete_playlist_btn.grid(row=0, column=5, padx=8, pady=8)
+        rename_playlist_btn = ttk.Button(
+            save_frame,
+            text="Rename Playlist",
+            command=self.rename_playlist_clicked,
+        )
+        rename_playlist_btn.grid(row=1, column=0, columnspan=2, padx=8, pady=(0, 8), sticky="w")
+        library_frame = ttk.LabelFrame(window, text="Library", style="Section.TLabelframe")
+        library_frame.grid(row=4, column=0, sticky="nsew", padx=(12, 6), pady=8)
+        library_frame.columnconfigure(0, weight=1)
+        library_frame.rowconfigure(0, weight=1)
+
+        playlist_frame = ttk.LabelFrame(window, text="Current Playlist", style="Section.TLabelframe")
+        playlist_frame.grid(row=4, column=1, sticky="nsew", padx=(6, 12), pady=8)
+        playlist_frame.columnconfigure(0, weight=1)
+        playlist_frame.rowconfigure(0, weight=1)
+
+        self.library_txt = tkst.ScrolledText(library_frame, width=50, height=20, wrap="none")
+        self.library_txt.grid(row=0, column=0, sticky="nsew", padx=8, pady=8)
+
+        self.playlist_txt = tkst.ScrolledText(playlist_frame, width=50, height=20, wrap="none")
+        self.playlist_txt.grid(row=0, column=0, sticky="nsew", padx=8, pady=8)
+
+        self.status_lbl = ttk.Label(window, text="", style="Status.TLabel")
+        self.status_lbl.grid(row=5, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 10))
+
+        self.list_tracks_clicked()
+        self.refresh_playlist_text()
+
+    def list_tracks_clicked(self):
+        set_text(self.library_txt, lib.list_all())
+        self.status_lbl.configure(text="Library tracks are displayed.")
+
+    def refresh_playlist_text(self):
+        if len(self.playlist) == 0:
+            set_text(self.playlist_txt, "")
+            return
+
+        output_lines = []
+        for number, track_key in enumerate(self.playlist, start=1):
+            track_name = lib.get_name(track_key)
+            output_lines.append(f"{number}. {track_key} {track_name}")
+        set_text(self.playlist_txt, "\n".join(output_lines))
+
+    def add_track_clicked(self):
+        track_key = normalise_track_number(self.input_txt.get())
+        if track_key is None:
+            self.status_lbl.configure(text="Please enter digits only for the track number.")
+            return
+
+        track_name = lib.get_name(track_key)
+        if track_name is None:
+            self.status_lbl.configure(text=f"Track {track_key} does not exist.")
+            return
+
+        self.playlist.append(track_key)
+        self.refresh_playlist_text()
+        self.status_lbl.configure(text=f"Added '{track_name}' to the playlist.")
+        self.input_txt.delete(0, tk.END)
+
+    def remove_track_clicked(self):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="There is nothing to remove because the playlist is empty.")
+            return
+
+        position = get_valid_position(self.remove_input.get(), len(self.playlist))
+        if position is None:
+            self.status_lbl.configure(text=f"Enter a valid position between 1 and {len(self.playlist)}.")
+            return
+
+        removed_key = self.playlist.pop(position - 1)
+        removed_name = lib.get_name(removed_key)
+        self.refresh_playlist_text()
+        self.status_lbl.configure(text=f"Removed '{removed_name}' from position {position}.")
+        self.remove_input.delete(0, tk.END)
+
+    def _get_move_position(self):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="The playlist is empty, so there is nothing to move.")
+            return None
+        position = get_valid_position(self.move_input.get(), len(self.playlist))
+        if position is None:
+            self.status_lbl.configure(text=f"Enter a valid position between 1 and {len(self.playlist)}.")
+            return None
+        return position
+
+    def move_up_clicked(self):
+        position = self._get_move_position()
+        if position is None:
+            return
+        if position == 1:
+            self.status_lbl.configure(text="That track is already at the top of the playlist.")
+            return
+
+        index = position - 1
+        self.playlist[index - 1], self.playlist[index] = self.playlist[index], self.playlist[index - 1]
+        self.refresh_playlist_text()
+        self.status_lbl.configure(text=f"Moved the track from position {position} to {position - 1}.")
+
+    def move_down_clicked(self):
+        position = self._get_move_position()
+        if position is None:
+            return
+        if position == len(self.playlist):
+            self.status_lbl.configure(text="That track is already at the bottom of the playlist.")
+            return
+
+        index = position - 1
+        self.playlist[index], self.playlist[index + 1] = self.playlist[index + 1], self.playlist[index]
+        self.refresh_playlist_text()
+        self.status_lbl.configure(text=f"Moved the track from position {position} to {position + 1}.")
+
+    def play_playlist_clicked(self):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
+            return
+
+        for track_key in self.playlist:
+            lib.increment_play_count(track_key, auto_save=False)
+        lib.save_library()
+        self.status_lbl.configure(text=f"Playlist played. {len(self.playlist)} track(s) had play counts updated.")
+
+    def reset_playlist_clicked(self):
+        self.playlist.clear()
+        self.refresh_playlist_text()
+        self.status_lbl.configure(text="Playlist reset complete.")
+
+    def _get_playlist_path(self):
+        playlist_name = normalise_playlist_name(self.playlist_name_input.get())
+        if playlist_name is None:
+            return None
+        return PLAYLIST_DIR / f"{playlist_name}.txt"
+
+    def save_playlist_clicked(self):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="Nothing to save because the playlist is empty.")
+            return
+
+        path = self._get_playlist_path()
+        if path is None:
+            self.status_lbl.configure(text="Please enter a valid playlist name.")
+            return
+
+        path.write_text("\n".join(self.playlist), encoding="utf-8")
+        self.status_lbl.configure(text=f"Playlist saved to {path.name}.")
+
+    def load_playlist_clicked(self):
+        path = self._get_playlist_path()
+        if path is None:
+            self.status_lbl.configure(text="Please enter a valid playlist name.")
+            return
+        if not path.exists():
+            self.status_lbl.configure(text="That playlist does not exist yet.")
+            return
+
+        loaded_playlist = []
+        for track_key in path.read_text(encoding="utf-8").splitlines():
+            if lib.get_name(track_key) is not None:
+                loaded_playlist.append(track_key)
+
+        self.playlist = loaded_playlist
+        self.refresh_playlist_text()
+        self.status_lbl.configure(text=f"Loaded {len(self.playlist)} track(s) from {path.name}.")
+
+    def rename_playlist_clicked(self):
+        old_path = self._get_playlist_path()
+        if old_path is None:
+            self.status_lbl.configure(text="Please enter the current playlist name first.")
+            return
+        if not old_path.exists():
+            self.status_lbl.configure(text="That playlist does not exist yet.")
+            return
+
+        new_name_text = simpledialog.askstring(
+            "Rename Playlist",
+            "Enter the new playlist name:",
+            parent=self.window,
+        )
+        if new_name_text is None:
+            self.status_lbl.configure(text="Rename cancelled.")
+            return
+
+        new_name = normalise_playlist_name(new_name_text)
+        if new_name is None:
+            self.status_lbl.configure(text="Please enter a valid new playlist name.")
+            return
+
+        new_path = PLAYLIST_DIR / f"{new_name}.txt"
+
+        if old_path == new_path:
+            self.status_lbl.configure(text="The new playlist name is the same as the current name.")
+            return
+
+        if new_path.exists():
+            self.status_lbl.configure(text="A playlist with that name already exists.")
+            return
+
+        old_path.rename(new_path)
+        self.playlist_name_input.delete(0, tk.END)
+        self.playlist_name_input.insert(0, new_name)
+        self.status_lbl.configure(text=f"Renamed playlist to {new_path.name}.")
+
+    def list_playlists_clicked(self):
+        playlist_files = sorted(path.name for path in PLAYLIST_DIR.glob("*.txt"))
+        if len(playlist_files) == 0:
+            self.status_lbl.configure(text="No saved playlists were found.")
+            return
+
+        output = "Saved playlists:\n" + "\n".join(f"- {name}" for name in playlist_files)
+        set_text(self.playlist_txt, output)
+        self.status_lbl.configure(text=f"Found {len(playlist_files)} saved playlist(s).")
+
+    def delete_playlist_clicked(self):
+        path = self._get_playlist_path()
+        if path is None:
+            self.status_lbl.configure(text="Please enter a valid playlist name.")
+            return
+        if not path.exists():
+            self.status_lbl.configure(text="That playlist does not exist yet.")
+            return
+
+        path.unlink()
+        self.status_lbl.configure(text=f"Deleted playlist file {path.name}.")
+
+
+if __name__ == "__main__":
+    window = tk.Tk()
+    fonts.configure()
+    CreateTrackList(window)
+    window.mainloop()
