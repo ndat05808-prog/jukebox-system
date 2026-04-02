@@ -9,7 +9,8 @@ from update_tracks import UpdateTracks
 from view_tracks import TrackViewer
 
 
-def view_tracks_clicked():
+
+ def view_tracks_clicked():
     status_lbl.configure(text="Opening View Tracks window.")
     TrackViewer(tk.Toplevel(window))
 
