@@ -2,9 +2,9 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 from tkinter import ttk
 
-import font_manager as fonts
-import track_library as lib
-from validation import normalise_track_number
+from . import font_manager as fonts
+from . import track_library as lib
+from .validation import normalise_track_number
 
 
 # This helper function replaces all of the old text inside a text widget.

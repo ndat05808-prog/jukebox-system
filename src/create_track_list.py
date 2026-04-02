@@ -3,15 +3,15 @@ import tkinter.scrolledtext as tkst
 from pathlib import Path
 from tkinter import simpledialog, ttk
 
-import font_manager as fonts
-import track_library as lib
-from validation import (
+from . import font_manager as fonts
+from . import track_library as lib
+from .validation import (
     get_valid_position,
     normalise_playlist_name,
     normalise_track_number,
 )
 
-PROJECT_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 PLAYLIST_DIR = PROJECT_DIR / "playlists"
 PLAYLIST_DIR.mkdir(exist_ok=True)
 

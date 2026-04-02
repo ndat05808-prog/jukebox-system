@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import track_library as lib
+from src import track_library as lib
 
 
 def setup_module(module):

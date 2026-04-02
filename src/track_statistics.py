@@ -2,8 +2,8 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 from tkinter import ttk
 
-import font_manager as fonts
-import track_library as lib
+from . import font_manager as fonts
+from . import track_library as lib
 
 
 def set_text(text_area, content):

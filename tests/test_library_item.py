@@ -1,4 +1,4 @@
-from library_item import AlbumTrack, LibraryItem
+from src.library_item import AlbumTrack, LibraryItem
 
 
 def test_library_item_stores_name_artist_and_default_values():

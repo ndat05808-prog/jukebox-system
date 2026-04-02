@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from library_item import AlbumTrack, LibraryItem
+from .library_item import AlbumTrack, LibraryItem
 
-PROJECT_DIR = Path(__file__).resolve().parent
-DATA_FILE = PROJECT_DIR / "library_data.json"
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DATA_FILE = PROJECT_DIR / "data" / "library_data.json"
 
 DEFAULT_LIBRARY = {
     "01": {
