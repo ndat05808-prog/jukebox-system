@@ -26,3 +26,5 @@ test_library_data.json
 
 # Playlists (generated at runtime)
 playlists/
+
+./claude/*
