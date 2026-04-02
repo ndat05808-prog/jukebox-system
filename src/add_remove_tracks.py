@@ -7,7 +7,7 @@ from . import track_library as lib
 from .validation import get_valid_rating, normalise_track_number
 
 
-    def set_text(text_area, content):
+def set_text(text_area, content):
     text_area.configure(state="normal")
     text_area.delete("1.0", tk.END)
     text_area.insert("1.0", content)
