@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from .library_item import AlbumTrack, LibraryItem
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-DATA_FILE = PROJECT_DIR / "data" / "library_data.json"
+DATA_DIR = PROJECT_DIR / "data"
+DATA_DIR.mkdir(exist_ok=True)
+
+DATA_FILE = DATA_DIR / "library_data.json"
+HISTORY_FILE = DATA_DIR / "history_data.json"
 
 DEFAULT_LIBRARY = {
     "01": {
@@ -93,6 +98,55 @@ def save_library() -> None:
     """Write the current library to JSON."""
     data = {key: item.to_dict() for key, item in library.items()}
     DATA_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def load_history() -> list[dict]:
+    """Load play history from JSON."""
+    if not HISTORY_FILE.exists():
+        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        return []
+
+    try:
+        history = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        return []
+
+    if not isinstance(history, list):
+        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        return []
+
+    return history
+
+
+def save_history(history: list[dict]) -> None:
+    """Write play history to JSON."""
+    HISTORY_FILE.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def add_history_entry(track_key: str, source: str = "playlist") -> bool:
+    """Add one play-history entry for a track."""
+    item = get_item(track_key)
+    if item is None:
+        return False
+
+    history = load_history()
+    history.append(
+        {
+            "track_key": track_key,
+            "name": item.name,
+            "artist": item.artist,
+            "played_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "source": source,
+        }
+    )
+    save_history(history)
+    return True
+
+
+def clear_history() -> None:
+    """Delete all history entries."""
+    save_history([])
 
 
 def all_keys() -> list[str]:
