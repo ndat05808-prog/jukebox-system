@@ -4,7 +4,7 @@ from tkinter import ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
-from .validation import normalise_track_number
+from .validation import normalise_track_number, get_valid_rating
 
 
 # This helper function replaces all of the old text inside a text widget.
