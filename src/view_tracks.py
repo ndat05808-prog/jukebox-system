@@ -59,12 +59,6 @@ class TrackViewer:
         show_all_btn = ttk.Button(control_frame, text="Show All Again", command=self.list_tracks_clicked)
         show_all_btn.grid(row=1, column=4, padx=8, pady=8)
 
-        search_btn = ttk.Button(control_frame, text="Search", command=self.search_tracks_clicked)
-        search_btn.grid(row=1, column=3, padx=8, pady=8)
-
-        show_all_btn = ttk.Button(control_frame, text="Show All Again", command=self.list_tracks_clicked)
-        show_all_btn.grid(row=1, column=4, padx=8, pady=8)
-
         filter_lbl = ttk.Label(control_frame, text="Filter By Score (0-5)")
         filter_lbl.grid(row=2, column=0, padx=8, pady=8)
 
@@ -74,8 +68,6 @@ class TrackViewer:
         filter_btn = ttk.Button(control_frame, text="Filter Score", command=self.filter_by_score_clicked)
         filter_btn.grid(row=2, column=3, padx=8, pady=8)
 
-        library_frame = ttk.LabelFrame(window, text="Library List", style="Section.TLabelframe")
-        library_frame.grid(row=2, column=0, sticky="nsew", padx=(12, 6), pady=8)
         library_frame = ttk.LabelFrame(window, text="Library List", style="Section.TLabelframe")
         library_frame.grid(row=2, column=0, sticky="nsew", padx=(12, 6), pady=8)
         library_frame.columnconfigure(0, weight=1)
@@ -138,6 +130,23 @@ class TrackViewer:
                 self.status_lbl.configure(text="Search box was empty, so all tracks were shown.")
             else:
                 self.status_lbl.configure(text=f"Showing search results for '{keyword}'.")
+
+    def filter_by_score_clicked(self):
+        rating = get_valid_rating(self.rating_filter_txt.get(), allow_zero=True)
+
+        if rating is None:
+            set_text(self.list_txt, "Please enter a whole number from 0 to 5.")
+            self.status_lbl.configure(text="Filter score must be between 0 and 5.")
+            return
+
+        results = lib.filter_tracks_by_rating(rating)
+
+        if results == "":
+            set_text(self.list_txt, f"No tracks were found with rating {rating}.")
+            self.status_lbl.configure(text=f"Filter finished: 0 tracks with rating {rating}.")
+        else:
+            set_text(self.list_txt, results)
+            self.status_lbl.configure(text=f"Showing tracks with rating {rating}.")
 
 
 if __name__ == "__main__":
