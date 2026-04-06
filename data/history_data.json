@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-06 17:53:08",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "05",
+    "name": "You've Got a Friend",
+    "artist": "James Taylor",
+    "played_at": "2026-04-06 17:53:09",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "played_at": "2026-04-06 17:53:16",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-06 17:53:18",
+    "source": "playlist_skip"
+  }
+]
