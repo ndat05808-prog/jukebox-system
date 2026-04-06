@@ -230,8 +230,12 @@ class CreateTrackList:
 
         for track_key in self.playlist:
             lib.increment_play_count(track_key, auto_save=False)
+            lib.add_history_entry(track_key, source="playlist")
+
         lib.save_library()
-        self.status_lbl.configure(text=f"Playlist played. {len(self.playlist)} track(s) had play counts updated.")
+        self.status_lbl.configure(
+            text=f"Playlist played. {len(self.playlist)} track(s) had play counts updated and history saved."
+        )
 
     def reset_playlist_clicked(self):
         self.playlist.clear()
