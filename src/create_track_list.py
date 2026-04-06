@@ -27,6 +27,9 @@ class CreateTrackList:
     def __init__(self, window):
         self.window = window
         self.playlist = []
+        self.current_index = None
+        self.is_playing = False
+        self.is_paused = False
 
         window.geometry("1160x700")
         window.title("Create Track List")
@@ -61,7 +64,7 @@ class CreateTrackList:
         remove_btn = ttk.Button(add_frame, text="Remove Track", command=self.remove_track_clicked)
         remove_btn.grid(row=0, column=6, padx=8, pady=8)
 
-        move_frame = ttk.LabelFrame(window, text="Reorder Playlist", style="Section.TLabelframe")
+        move_frame = ttk.LabelFrame(window, text="Reorder Playlist / Playback", style="Section.TLabelframe")
         move_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=12, pady=6)
 
         move_lbl = ttk.Label(move_frame, text="Position")
@@ -81,6 +84,15 @@ class CreateTrackList:
 
         reset_btn = ttk.Button(move_frame, text="Reset Playlist", command=self.reset_playlist_clicked)
         reset_btn.grid(row=0, column=5, padx=8, pady=8)
+
+        load_current_btn = ttk.Button(move_frame, text="Load Current Track", command=self.load_current_track_clicked)
+        load_current_btn.grid(row=1, column=0, columnspan=2, padx=8, pady=(0, 8), sticky="ew")
+
+        pause_resume_btn = ttk.Button(move_frame, text="Pause / Resume", command=self.pause_resume_clicked)
+        pause_resume_btn.grid(row=1, column=2, columnspan=2, padx=8, pady=(0, 8), sticky="ew")
+
+        skip_btn = ttk.Button(move_frame, text="Skip Track", command=self.skip_track_clicked)
+        skip_btn.grid(row=1, column=4, columnspan=2, padx=8, pady=(0, 8), sticky="ew")
 
         save_frame = ttk.LabelFrame(window, text="Save / Load Playlists", style="Section.TLabelframe")
         save_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=12, pady=6)
@@ -140,6 +152,32 @@ class CreateTrackList:
         self.list_tracks_clicked()
         self.refresh_playlist_text()
 
+    def _reset_playback_state(self):
+        self.current_index = None
+        self.is_playing = False
+        self.is_paused = False
+
+    def _play_current_track(self, source="playlist"):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
+            return False
+
+        if self.current_index is None or self.current_index < 0 or self.current_index >= len(self.playlist):
+            self.current_index = 0
+
+        track_key = self.playlist[self.current_index]
+        track_name = lib.get_name(track_key) or "Unknown Track"
+
+        lib.increment_play_count(track_key, auto_save=False)
+        lib.add_history_entry(track_key, source=source)
+        lib.save_library()
+
+        self.is_playing = True
+        self.is_paused = False
+        self.refresh_playlist_text()
+        self.status_lbl.configure(text=f"Now playing: '{track_name}' (track {track_key}).")
+        return True
+
     def list_tracks_clicked(self):
         set_text(self.library_txt, lib.list_all())
         self.status_lbl.configure(text="Library tracks are displayed.")
@@ -152,7 +190,18 @@ class CreateTrackList:
         output_lines = []
         for number, track_key in enumerate(self.playlist, start=1):
             track_name = lib.get_name(track_key)
-            output_lines.append(f"{number}. {track_key} {track_name}")
+
+            marker = "  "
+            if self.current_index == number - 1:
+                if self.is_playing:
+                    marker = ">>"
+                elif self.is_paused:
+                    marker = "||"
+                else:
+                    marker = "[]"
+
+            output_lines.append(f"{marker} {number}. {track_key} {track_name}")
+
         set_text(self.playlist_txt, "\n".join(output_lines))
 
     def add_track_clicked(self):
@@ -181,8 +230,21 @@ class CreateTrackList:
             self.status_lbl.configure(text=f"Enter a valid position between 1 and {len(self.playlist)}.")
             return
 
-        removed_key = self.playlist.pop(position - 1)
+        removed_index = position - 1
+        removed_key = self.playlist.pop(removed_index)
         removed_name = lib.get_name(removed_key)
+
+        if len(self.playlist) == 0:
+            self._reset_playback_state()
+        elif self.current_index is not None:
+            if removed_index < self.current_index:
+                self.current_index -= 1
+            elif removed_index == self.current_index:
+                self.is_playing = False
+                self.is_paused = False
+                if self.current_index >= len(self.playlist):
+                    self.current_index = len(self.playlist) - 1
+
         self.refresh_playlist_text()
         self.status_lbl.configure(text=f"Removed '{removed_name}' from position {position}.")
         self.remove_input.delete(0, tk.END)
@@ -207,6 +269,12 @@ class CreateTrackList:
 
         index = position - 1
         self.playlist[index - 1], self.playlist[index] = self.playlist[index], self.playlist[index - 1]
+
+        if self.current_index == index:
+            self.current_index -= 1
+        elif self.current_index == index - 1:
+            self.current_index += 1
+
         self.refresh_playlist_text()
         self.status_lbl.configure(text=f"Moved the track from position {position} to {position - 1}.")
 
@@ -220,25 +288,81 @@ class CreateTrackList:
 
         index = position - 1
         self.playlist[index], self.playlist[index + 1] = self.playlist[index + 1], self.playlist[index]
+
+        if self.current_index == index:
+            self.current_index += 1
+        elif self.current_index == index + 1:
+            self.current_index -= 1
+
         self.refresh_playlist_text()
         self.status_lbl.configure(text=f"Moved the track from position {position} to {position + 1}.")
+
+    def load_current_track_clicked(self):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
+            return
+
+        if self.current_index is None or self.current_index < 0 or self.current_index >= len(self.playlist):
+            self.current_index = 0
+
+        track_key = self.playlist[self.current_index]
+        track_name = lib.get_name(track_key) or "Unknown Track"
+
+        self.is_playing = False
+        self.is_paused = False
+        self.refresh_playlist_text()
+        self.status_lbl.configure(text=f"Loaded track {track_key}: '{track_name}'. Click Play Playlist to start.")
 
     def play_playlist_clicked(self):
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
             return
 
-        for track_key in self.playlist:
-            lib.increment_play_count(track_key, auto_save=False)
-            lib.add_history_entry(track_key, source="playlist")
+        if self.current_index is None or self.current_index < 0 or self.current_index >= len(self.playlist):
+            self.current_index = 0
 
-        lib.save_library()
-        self.status_lbl.configure(
-            text=f"Playlist played. {len(self.playlist)} track(s) had play counts updated and history saved."
-        )
+        self._play_current_track(source="playlist")
+
+    def pause_resume_clicked(self):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
+            return
+
+        if self.current_index is None or self.current_index < 0 or self.current_index >= len(self.playlist):
+            self.status_lbl.configure(text="Load or play a track first.")
+            return
+
+        track_key = self.playlist[self.current_index]
+        track_name = lib.get_name(track_key) or "Unknown Track"
+
+        if self.is_playing:
+            self.is_playing = False
+            self.is_paused = True
+            self.refresh_playlist_text()
+            self.status_lbl.configure(text=f"Paused '{track_name}'.")
+        elif self.is_paused:
+            self.is_playing = True
+            self.is_paused = False
+            self.refresh_playlist_text()
+            self.status_lbl.configure(text=f"Resumed '{track_name}'.")
+        else:
+            self.status_lbl.configure(text="Track is loaded but not playing. Click Play Playlist to start.")
+
+    def skip_track_clicked(self):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
+            return
+
+        if self.current_index is None or self.current_index < 0 or self.current_index >= len(self.playlist):
+            self.current_index = 0
+        else:
+            self.current_index = (self.current_index + 1) % len(self.playlist)
+
+        self._play_current_track(source="playlist_skip")
 
     def reset_playlist_clicked(self):
         self.playlist.clear()
+        self._reset_playback_state()
         self.refresh_playlist_text()
         self.status_lbl.configure(text="Playlist reset complete.")
 
@@ -269,6 +393,7 @@ class CreateTrackList:
             return
 
         self.playlist.clear()
+        self._reset_playback_state()
         self.refresh_playlist_text()
         self.playlist_name_input.delete(0, tk.END)
         self.playlist_name_input.insert(0, new_name)
@@ -303,6 +428,7 @@ class CreateTrackList:
                 loaded_playlist.append(track_key)
 
         self.playlist = loaded_playlist
+        self._reset_playback_state()
         self.refresh_playlist_text()
         self.status_lbl.configure(text=f"Loaded {len(self.playlist)} track(s) from {path.name}.")
 
