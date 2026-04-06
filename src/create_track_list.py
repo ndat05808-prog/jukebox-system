@@ -103,12 +103,21 @@ class CreateTrackList:
 
         delete_playlist_btn = ttk.Button(save_frame, text="Delete Playlist", command=self.delete_playlist_clicked)
         delete_playlist_btn.grid(row=0, column=5, padx=8, pady=8)
+
         rename_playlist_btn = ttk.Button(
             save_frame,
             text="Rename Playlist",
             command=self.rename_playlist_clicked,
         )
         rename_playlist_btn.grid(row=1, column=0, columnspan=2, padx=8, pady=(0, 8), sticky="w")
+
+        create_playlist_btn = ttk.Button(
+            save_frame,
+            text="Create New Playlist",
+            command=self.create_new_playlist_clicked,
+        )
+        create_playlist_btn.grid(row=1, column=2, columnspan=2, padx=8, pady=(0, 8), sticky="w")
+
         library_frame = ttk.LabelFrame(window, text="Library", style="Section.TLabelframe")
         library_frame.grid(row=4, column=0, sticky="nsew", padx=(12, 6), pady=8)
         library_frame.columnconfigure(0, weight=1)
@@ -234,6 +243,33 @@ class CreateTrackList:
         if playlist_name is None:
             return None
         return PLAYLIST_DIR / f"{playlist_name}.txt"
+
+    def create_new_playlist_clicked(self):
+        new_name_text = simpledialog.askstring(
+            "Create New Playlist",
+            "Enter the new playlist name:",
+            parent=self.window,
+        )
+        if new_name_text is None:
+            self.status_lbl.configure(text="Create new playlist cancelled.")
+            return
+
+        new_name = normalise_playlist_name(new_name_text)
+        if new_name is None:
+            self.status_lbl.configure(text="Please enter a valid playlist name.")
+            return
+
+        new_path = PLAYLIST_DIR / f"{new_name}.txt"
+        if new_path.exists():
+            self.status_lbl.configure(text="A playlist with that name already exists.")
+            return
+
+        self.playlist.clear()
+        self.refresh_playlist_text()
+        self.playlist_name_input.delete(0, tk.END)
+        self.playlist_name_input.insert(0, new_name)
+        new_path.write_text("", encoding="utf-8")
+        self.status_lbl.configure(text=f"Created new playlist '{new_name}'.")
 
     def save_playlist_clicked(self):
         if len(self.playlist) == 0:
