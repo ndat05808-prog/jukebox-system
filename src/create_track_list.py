@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.scrolledtext as tkst
 from pathlib import Path
-from tkinter import simpledialog, ttk
+from tkinter import messagebox, simpledialog, ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
@@ -32,10 +32,11 @@ class CreateTrackList:
         self.is_paused = False
 
         window.geometry("1160x700")
-        window.title("Create Track List")
+        window.title("Playlist Builder")
         fonts.apply_theme(window)
         window.columnconfigure(0, weight=1)
         window.columnconfigure(1, weight=1)
+        window.rowconfigure(4, weight=1)
 
         title_lbl = ttk.Label(window, text="Playlist Builder", style="Title.TLabel")
         title_lbl.grid(row=0, column=0, columnspan=2, sticky="w", padx=12, pady=(12, 6))
@@ -184,7 +185,7 @@ class CreateTrackList:
 
     def refresh_playlist_text(self):
         if len(self.playlist) == 0:
-            set_text(self.playlist_txt, "")
+            set_text(self.playlist_txt, "No tracks in current playlist.")
             return
 
         output_lines = []
@@ -476,8 +477,7 @@ class CreateTrackList:
             self.status_lbl.configure(text="No saved playlists were found.")
             return
 
-        output = "Saved playlists:\n" + "\n".join(f"- {name}" for name in playlist_files)
-        set_text(self.playlist_txt, output)
+        messagebox.showinfo("Saved Playlists", "\n".join(playlist_files))
         self.status_lbl.configure(text=f"Found {len(playlist_files)} saved playlist(s).")
 
     def delete_playlist_clicked(self):
