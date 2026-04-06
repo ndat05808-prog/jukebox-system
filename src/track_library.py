@@ -140,6 +140,7 @@ def set_rating(key: str, rating: int, auto_save: bool = True) -> bool:
         save_library()
     return True
 
+
 def update_track_info(
     key: str,
     name: str,
@@ -171,6 +172,7 @@ def update_track_info(
         save_library()
     return True
 
+
 def get_play_count(key: str) -> int:
     item = get_item(key)
     if item is None:
@@ -194,13 +196,6 @@ def get_details(key: str) -> str | None:
         return None
     return item.details(key)
 
-def filter_tracks_by_rating(rating: int) -> str:
-    output_lines = []
-    for key in all_keys():
-        item = library[key]
-        if item.rating == rating:
-            output_lines.append(f"{key} {item.info()}")
-    return "\n".join(output_lines) + ("\n" if output_lines else "")
 
 def search_tracks(keyword: str) -> str:
     keyword = keyword.strip().lower()
@@ -211,6 +206,15 @@ def search_tracks(keyword: str) -> str:
     for key in all_keys():
         item = library[key]
         if item.matches(keyword):
+            output_lines.append(f"{key} {item.info()}")
+    return "\n".join(output_lines) + ("\n" if output_lines else "")
+
+
+def filter_tracks_by_rating(rating: int) -> str:
+    output_lines = []
+    for key in all_keys():
+        item = library[key]
+        if item.rating == rating:
             output_lines.append(f"{key} {item.info()}")
     return "\n".join(output_lines) + ("\n" if output_lines else "")
 
