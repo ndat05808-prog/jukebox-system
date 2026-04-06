@@ -59,6 +59,23 @@ class TrackViewer:
         show_all_btn = ttk.Button(control_frame, text="Show All Again", command=self.list_tracks_clicked)
         show_all_btn.grid(row=1, column=4, padx=8, pady=8)
 
+        search_btn = ttk.Button(control_frame, text="Search", command=self.search_tracks_clicked)
+        search_btn.grid(row=1, column=3, padx=8, pady=8)
+
+        show_all_btn = ttk.Button(control_frame, text="Show All Again", command=self.list_tracks_clicked)
+        show_all_btn.grid(row=1, column=4, padx=8, pady=8)
+
+        filter_lbl = ttk.Label(control_frame, text="Filter By Score (0-5)")
+        filter_lbl.grid(row=2, column=0, padx=8, pady=8)
+
+        self.rating_filter_txt = ttk.Entry(control_frame, width=8)
+        self.rating_filter_txt.grid(row=2, column=1, padx=8, pady=8, sticky="w")
+
+        filter_btn = ttk.Button(control_frame, text="Filter Score", command=self.filter_by_score_clicked)
+        filter_btn.grid(row=2, column=3, padx=8, pady=8)
+
+        library_frame = ttk.LabelFrame(window, text="Library List", style="Section.TLabelframe")
+        library_frame.grid(row=2, column=0, sticky="nsew", padx=(12, 6), pady=8)
         library_frame = ttk.LabelFrame(window, text="Library List", style="Section.TLabelframe")
         library_frame.grid(row=2, column=0, sticky="nsew", padx=(12, 6), pady=8)
         library_frame.columnconfigure(0, weight=1)
