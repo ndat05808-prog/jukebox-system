@@ -194,6 +194,13 @@ def get_details(key: str) -> str | None:
         return None
     return item.details(key)
 
+def filter_tracks_by_rating(rating: int) -> str:
+    output_lines = []
+    for key in all_keys():
+        item = library[key]
+        if item.rating == rating:
+            output_lines.append(f"{key} {item.info()}")
+    return "\n".join(output_lines) + ("\n" if output_lines else "")
 
 def search_tracks(keyword: str) -> str:
     keyword = keyword.strip().lower()
