@@ -4,15 +4,9 @@ from tkinter import ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
+from .gui_helpers import set_text
 from .library_item import AlbumTrack
-from .validation import get_valid_rating, normalise_track_number
-
-
-def set_text(text_area, content):
-    text_area.configure(state="normal")
-    text_area.delete("1.0", tk.END)
-    text_area.insert("1.0", content)
-    text_area.configure(state="disabled")
+from .validation import get_valid_rating, get_valid_year, normalise_track_number
 
 
 class UpdateTracks:
@@ -55,7 +49,7 @@ class UpdateTracks:
         self.artist_input = ttk.Entry(control_frame, width=24)
         self.artist_input.grid(row=1, column=3, padx=8, pady=8)
 
-        rating_lbl = ttk.Label(control_frame, text="Rating (1-5)")
+        rating_lbl = ttk.Label(control_frame, text="Rating (0-5)")
         rating_lbl.grid(row=1, column=4, padx=8, pady=8)
 
         self.rating_input = ttk.Entry(control_frame, width=8)
@@ -112,14 +106,6 @@ class UpdateTracks:
         self.album_input.delete(0, tk.END)
         self.year_input.delete(0, tk.END)
 
-    def _parse_optional_year(self):
-        year_text = self.year_input.get().strip()
-        if year_text == "":
-            return None, None
-        if not year_text.isdigit():
-            return None, "Year must be a whole number or left blank."
-        return int(year_text), None
-
     def load_track_clicked(self):
         track_key = normalise_track_number(self.track_input.get())
         if track_key is None:
@@ -166,16 +152,17 @@ class UpdateTracks:
             self.status_lbl.configure(text="Please enter both name and artist.")
             return
 
-        rating = get_valid_rating(self.rating_input.get())
+        rating = get_valid_rating(self.rating_input.get(), allow_zero=True)
         if rating is None:
-            set_text(self.track_txt, "Rating must be a whole number from 1 to 5.")
-            self.status_lbl.configure(text="Please enter a rating between 1 and 5.")
+            set_text(self.track_txt, "Rating must be a whole number from 0 to 5.")
+            self.status_lbl.configure(text="Please enter a rating between 0 and 5.")
             return
 
-        year, year_error = self._parse_optional_year()
-        if year_error is not None:
-            set_text(self.track_txt, year_error)
-            self.status_lbl.configure(text=year_error)
+        year_text = self.year_input.get().strip()
+        year = get_valid_year(year_text)
+        if year_text != "" and year is None:
+            set_text(self.track_txt, "Year must be between 1900 and 2100, or left blank.")
+            self.status_lbl.configure(text="Year must be between 1900 and 2100, or left blank.")
             return
 
         album = self.album_input.get().strip()
@@ -191,7 +178,7 @@ class UpdateTracks:
 
         if not success:
             set_text(self.track_txt, "The track could not be updated.")
-            self.status_lbl.configure(text="Update failed.")
+            self.status_lbl.configure(text="Update failed. The file may not have been saved.")
             return
 
         details = lib.get_details(track_key)
