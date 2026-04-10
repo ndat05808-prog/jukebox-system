@@ -5,6 +5,7 @@ from tkinter import messagebox, simpledialog, ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
+from .gui_helpers import set_text
 from .validation import (
     get_valid_position,
     normalise_playlist_name,
@@ -14,13 +15,6 @@ from .validation import (
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 PLAYLIST_DIR = PROJECT_DIR / "playlists"
 PLAYLIST_DIR.mkdir(exist_ok=True)
-
-
-def set_text(text_area, content):
-    text_area.configure(state="normal")
-    text_area.delete("1.0", tk.END)
-    text_area.insert("1.0", content)
-    text_area.configure(state="disabled")
 
 
 class CreateTrackList:
@@ -52,6 +46,7 @@ class CreateTrackList:
 
         self.input_txt = ttk.Entry(add_frame, width=8)
         self.input_txt.grid(row=0, column=2, padx=8, pady=8)
+        self.input_txt.bind("<Return>", lambda event: self.add_track_clicked())
 
         add_track_btn = ttk.Button(add_frame, text="Add Track", command=self.add_track_clicked)
         add_track_btn.grid(row=0, column=3, padx=8, pady=8)
@@ -61,6 +56,7 @@ class CreateTrackList:
 
         self.remove_input = ttk.Entry(add_frame, width=8)
         self.remove_input.grid(row=0, column=5, padx=8, pady=8)
+        self.remove_input.bind("<Return>", lambda event: self.remove_track_clicked())
 
         remove_btn = ttk.Button(add_frame, text="Remove Track", command=self.remove_track_clicked)
         remove_btn.grid(row=0, column=6, padx=8, pady=8)
@@ -158,7 +154,34 @@ class CreateTrackList:
         self.is_playing = False
         self.is_paused = False
 
-    def _play_current_track(self, source="playlist"):
+    def _remove_missing_tracks(self, show_status=False):
+        removed_keys = []
+        valid_keys = []
+
+        for track_key in self.playlist:
+            if lib.get_name(track_key) is None:
+                removed_keys.append(track_key)
+            else:
+                valid_keys.append(track_key)
+
+        if removed_keys:
+            self.playlist = valid_keys
+
+            if len(self.playlist) == 0:
+                self._reset_playback_state()
+            elif self.current_index is not None and self.current_index >= len(self.playlist):
+                self.current_index = len(self.playlist) - 1
+
+            if show_status:
+                self.status_lbl.configure(
+                    text=f"Removed {len(removed_keys)} missing track(s) from the playlist."
+                )
+
+        return removed_keys
+
+    def _play_current_track(self, source="playlist_single"):
+        self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
             return False
@@ -169,9 +192,16 @@ class CreateTrackList:
         track_key = self.playlist[self.current_index]
         track_name = lib.get_name(track_key) or "Unknown Track"
 
-        lib.increment_play_count(track_key, auto_save=False)
-        lib.add_history_entry(track_key, source=source)
-        lib.save_library()
+        if not lib.increment_play_count(track_key, auto_save=False):
+            self.status_lbl.configure(text=f"Track {track_key} could not be played.")
+            return False
+
+        try:
+            lib.add_history_entry(track_key, source=source)
+            lib.save_library()
+        except OSError:
+            self.status_lbl.configure(text="Track played in memory, but saving to file failed.")
+            return False
 
         self.is_playing = True
         self.is_paused = False
@@ -184,13 +214,15 @@ class CreateTrackList:
         self.status_lbl.configure(text="Library tracks are displayed.")
 
     def refresh_playlist_text(self):
+        self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             set_text(self.playlist_txt, "No tracks in current playlist.")
             return
 
         output_lines = []
         for number, track_key in enumerate(self.playlist, start=1):
-            track_name = lib.get_name(track_key)
+            track_name = lib.get_name(track_key) or "[Missing Track]"
 
             marker = "  "
             if self.current_index == number - 1:
@@ -222,6 +254,8 @@ class CreateTrackList:
         self.input_txt.delete(0, tk.END)
 
     def remove_track_clicked(self):
+        self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="There is nothing to remove because the playlist is empty.")
             return
@@ -233,7 +267,7 @@ class CreateTrackList:
 
         removed_index = position - 1
         removed_key = self.playlist.pop(removed_index)
-        removed_name = lib.get_name(removed_key)
+        removed_name = lib.get_name(removed_key) or "Unknown Track"
 
         if len(self.playlist) == 0:
             self._reset_playback_state()
@@ -251,19 +285,24 @@ class CreateTrackList:
         self.remove_input.delete(0, tk.END)
 
     def _get_move_position(self):
+        self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty, so there is nothing to move.")
             return None
+
         position = get_valid_position(self.move_input.get(), len(self.playlist))
         if position is None:
             self.status_lbl.configure(text=f"Enter a valid position between 1 and {len(self.playlist)}.")
             return None
+
         return position
 
     def move_up_clicked(self):
         position = self._get_move_position()
         if position is None:
             return
+
         if position == 1:
             self.status_lbl.configure(text="That track is already at the top of the playlist.")
             return
@@ -283,6 +322,7 @@ class CreateTrackList:
         position = self._get_move_position()
         if position is None:
             return
+
         if position == len(self.playlist):
             self.status_lbl.configure(text="That track is already at the bottom of the playlist.")
             return
@@ -299,6 +339,8 @@ class CreateTrackList:
         self.status_lbl.configure(text=f"Moved the track from position {position} to {position + 1}.")
 
     def load_current_track_clicked(self):
+        self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
             return
@@ -312,19 +354,45 @@ class CreateTrackList:
         self.is_playing = False
         self.is_paused = False
         self.refresh_playlist_text()
-        self.status_lbl.configure(text=f"Loaded track {track_key}: '{track_name}'. Click Play Playlist to start.")
+        self.status_lbl.configure(text=f"Loaded track {track_key}: '{track_name}'. Click Play Playlist to simulate full playlist play.")
 
     def play_playlist_clicked(self):
+        removed_keys = self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
             return
 
-        if self.current_index is None or self.current_index < 0 or self.current_index >= len(self.playlist):
-            self.current_index = 0
+        played_count = 0
 
-        self._play_current_track(source="playlist")
+        try:
+            for track_key in self.playlist:
+                if lib.increment_play_count(track_key, auto_save=False):
+                    lib.add_history_entry(track_key, source="playlist")
+                    played_count += 1
+
+            lib.save_library()
+        except OSError:
+            self.status_lbl.configure(text="Playlist play count updated in memory, but saving failed.")
+            return
+
+        self.current_index = 0 if self.playlist else None
+        self.is_playing = False
+        self.is_paused = False
+        self.refresh_playlist_text()
+
+        if removed_keys:
+            self.status_lbl.configure(
+                text=f"Played {played_count} valid track(s). Removed {len(removed_keys)} missing track(s)."
+            )
+        else:
+            self.status_lbl.configure(
+                text=f"Playlist played successfully. Play count increased for {played_count} track(s)."
+            )
 
     def pause_resume_clicked(self):
+        self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
             return
@@ -347,9 +415,11 @@ class CreateTrackList:
             self.refresh_playlist_text()
             self.status_lbl.configure(text=f"Resumed '{track_name}'.")
         else:
-            self.status_lbl.configure(text="Track is loaded but not playing. Click Play Playlist to start.")
+            self.status_lbl.configure(text="Track is loaded but not playing. Use Skip or Load Current Track.")
 
     def skip_track_clicked(self):
+        self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
             return
@@ -362,6 +432,19 @@ class CreateTrackList:
         self._play_current_track(source="playlist_skip")
 
     def reset_playlist_clicked(self):
+        if len(self.playlist) == 0:
+            self.status_lbl.configure(text="The playlist is already empty.")
+            return
+
+        confirmed = messagebox.askyesno(
+            "Reset Playlist",
+            "Are you sure you want to clear the current playlist?",
+            parent=self.window,
+        )
+        if not confirmed:
+            self.status_lbl.configure(text="Reset playlist cancelled.")
+            return
+
         self.playlist.clear()
         self._reset_playback_state()
         self.refresh_playlist_text()
@@ -398,10 +481,18 @@ class CreateTrackList:
         self.refresh_playlist_text()
         self.playlist_name_input.delete(0, tk.END)
         self.playlist_name_input.insert(0, new_name)
-        new_path.write_text("", encoding="utf-8")
+
+        try:
+            new_path.write_text("", encoding="utf-8")
+        except OSError:
+            self.status_lbl.configure(text="Could not create the new playlist file.")
+            return
+
         self.status_lbl.configure(text=f"Created new playlist '{new_name}'.")
 
     def save_playlist_clicked(self):
+        self._remove_missing_tracks(show_status=False)
+
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="Nothing to save because the playlist is empty.")
             return
@@ -411,8 +502,13 @@ class CreateTrackList:
             self.status_lbl.configure(text="Please enter a valid playlist name.")
             return
 
-        path.write_text("\n".join(self.playlist), encoding="utf-8")
-        self.status_lbl.configure(text=f"Playlist saved to {path.name}.")
+        try:
+            path.write_text("\n".join(self.playlist), encoding="utf-8")
+        except OSError:
+            self.status_lbl.configure(text="Could not save the playlist file.")
+            return
+
+        self.status_lbl.configure(text=f"Playlist saved to {path.stem}.")
 
     def load_playlist_clicked(self):
         path = self._get_playlist_path()
@@ -423,15 +519,31 @@ class CreateTrackList:
             self.status_lbl.configure(text="That playlist does not exist yet.")
             return
 
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            self.status_lbl.configure(text="Could not load the playlist file.")
+            return
+
         loaded_playlist = []
-        for track_key in path.read_text(encoding="utf-8").splitlines():
+        skipped_count = 0
+
+        for track_key in lines:
             if lib.get_name(track_key) is not None:
                 loaded_playlist.append(track_key)
+            else:
+                skipped_count += 1
 
         self.playlist = loaded_playlist
         self._reset_playback_state()
         self.refresh_playlist_text()
-        self.status_lbl.configure(text=f"Loaded {len(self.playlist)} track(s) from {path.name}.")
+
+        if skipped_count > 0:
+            self.status_lbl.configure(
+                text=f"Loaded {len(self.playlist)} track(s) from {path.stem}. Skipped {skipped_count} missing track(s)."
+            )
+        else:
+            self.status_lbl.configure(text=f"Loaded {len(self.playlist)} track(s) from {path.stem}.")
 
     def rename_playlist_clicked(self):
         old_path = self._get_playlist_path()
@@ -466,18 +578,24 @@ class CreateTrackList:
             self.status_lbl.configure(text="A playlist with that name already exists.")
             return
 
-        old_path.rename(new_path)
+        try:
+            old_path.rename(new_path)
+        except OSError:
+            self.status_lbl.configure(text="Could not rename the playlist file.")
+            return
+
         self.playlist_name_input.delete(0, tk.END)
         self.playlist_name_input.insert(0, new_name)
-        self.status_lbl.configure(text=f"Renamed playlist to {new_path.name}.")
+        self.status_lbl.configure(text=f"Renamed playlist to {new_name}.")
 
     def list_playlists_clicked(self):
-        playlist_files = sorted(path.name for path in PLAYLIST_DIR.glob("*.txt"))
+        playlist_files = sorted(path.stem for path in PLAYLIST_DIR.glob("*.txt"))
+
         if len(playlist_files) == 0:
             self.status_lbl.configure(text="No saved playlists were found.")
             return
 
-        messagebox.showinfo("Saved Playlists", "\n".join(playlist_files))
+        messagebox.showinfo("Saved Playlists", "\n".join(playlist_files), parent=self.window)
         self.status_lbl.configure(text=f"Found {len(playlist_files)} saved playlist(s).")
 
     def delete_playlist_clicked(self):
@@ -489,8 +607,22 @@ class CreateTrackList:
             self.status_lbl.configure(text="That playlist does not exist yet.")
             return
 
-        path.unlink()
-        self.status_lbl.configure(text=f"Deleted playlist file {path.name}.")
+        confirmed = messagebox.askyesno(
+            "Delete Playlist",
+            f"Are you sure you want to delete '{path.stem}'?",
+            parent=self.window,
+        )
+        if not confirmed:
+            self.status_lbl.configure(text="Delete playlist cancelled.")
+            return
+
+        try:
+            path.unlink()
+        except OSError:
+            self.status_lbl.configure(text="Could not delete the playlist file.")
+            return
+
+        self.status_lbl.configure(text=f"Deleted playlist file {path.stem}.")
 
 
 if __name__ == "__main__":
