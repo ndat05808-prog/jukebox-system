@@ -23,8 +23,10 @@ def get_valid_rating(rating_text: str, allow_zero: bool = False) -> int | None:
         return 0 if allow_zero else None
     if not rating_text.isdigit():
         return None
+
     rating = int(rating_text)
     minimum = 0 if allow_zero else 1
+
     if minimum <= rating <= 5:
         return rating
     return None
@@ -35,6 +37,7 @@ def get_valid_position(position_text: str, maximum: int) -> int | None:
     position_text = position_text.strip()
     if not position_text.isdigit():
         return None
+
     position = int(position_text)
     if 1 <= position <= maximum:
         return position
@@ -46,8 +49,27 @@ def normalise_playlist_name(name: str) -> str | None:
     name = name.strip()
     if name == "":
         return None
+
     cleaned = "".join(character for character in name if character.isalnum() or character in "_- ")
     cleaned = " ".join(cleaned.split())
+
     if cleaned == "":
         return None
     return cleaned
+
+
+def get_valid_year(year_text: str, minimum: int = 1900, maximum: int = 2100) -> int | None:
+    """Return a valid year inside a sensible range.
+
+    Blank input returns None so the field can remain optional.
+    """
+    year_text = year_text.strip()
+    if year_text == "":
+        return None
+    if not year_text.isdigit():
+        return None
+
+    year = int(year_text)
+    if minimum <= year <= maximum:
+        return year
+    return None
