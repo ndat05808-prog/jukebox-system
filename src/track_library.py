@@ -62,66 +62,112 @@ library: dict[str, LibraryItem] = {}
 
 def _make_item(data: dict) -> LibraryItem:
     item_type = data.get("type", "LibraryItem")
-    if item_type == "AlbumTrack":
-        return AlbumTrack.from_dict(data)
-    return LibraryItem.from_dict(data)
+    try:
+        if item_type == "AlbumTrack":
+            return AlbumTrack.from_dict(data)
+        return LibraryItem.from_dict(data)
+    except (TypeError, ValueError):
+        return LibraryItem(
+            data.get("name", "Unknown Track"),
+            data.get("artist", "Unknown Artist"),
+            0,
+            0,
+        )
 
 
-def reset_library_to_default(save: bool = False) -> None:
+def reset_library_to_default(save: bool = False) -> bool:
     """Restore the in-memory library to the bundled default data."""
     global library
     library = {key: _make_item(info) for key, info in DEFAULT_LIBRARY.items()}
     if save:
-        save_library()
+        return save_library()
+    return True
 
 
-reset_library_to_default(save=False)
-
-
-def load_library() -> None:
+def load_library() -> bool:
     """Load the library from JSON, falling back to defaults when needed."""
     global library
+
     if not DATA_FILE.exists():
-        reset_library_to_default(save=True)
-        return
+        reset_library_to_default(save=False)
+        return save_library()
 
     try:
-        data = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+        raw_text = DATA_FILE.read_text(encoding="utf-8")
+        data = json.loads(raw_text)
     except (json.JSONDecodeError, OSError):
-        reset_library_to_default(save=True)
-        return
+        reset_library_to_default(save=False)
+        return save_library()
 
-    library = {key: _make_item(info) for key, info in data.items()}
+    if not isinstance(data, dict):
+        reset_library_to_default(save=False)
+        return save_library()
+
+    loaded_library = {}
+    for key, info in data.items():
+        if not isinstance(key, str) or not isinstance(info, dict):
+            continue
+        loaded_library[key] = _make_item(info)
+
+    if len(loaded_library) == 0:
+        reset_library_to_default(save=False)
+        return save_library()
+
+    library = loaded_library
+    return True
 
 
-def save_library() -> None:
+def save_library() -> bool:
     """Write the current library to JSON."""
     data = {key: item.to_dict() for key, item in library.items()}
-    DATA_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    try:
+        DATA_FILE.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return True
+    except OSError:
+        return False
 
 
 def load_history() -> list[dict]:
     """Load play history from JSON."""
     if not HISTORY_FILE.exists():
-        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        try:
+            HISTORY_FILE.write_text("[]", encoding="utf-8")
+        except OSError:
+            return []
         return []
 
     try:
         history = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
-        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        try:
+            HISTORY_FILE.write_text("[]", encoding="utf-8")
+        except OSError:
+            pass
         return []
 
     if not isinstance(history, list):
-        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        try:
+            HISTORY_FILE.write_text("[]", encoding="utf-8")
+        except OSError:
+            pass
         return []
 
     return history
 
 
-def save_history(history: list[dict]) -> None:
+def save_history(history: list[dict]) -> bool:
     """Write play history to JSON."""
-    HISTORY_FILE.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+    try:
+        HISTORY_FILE.write_text(
+            json.dumps(history, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return True
+    except OSError:
+        return False
 
 
 def add_history_entry(track_key: str, source: str = "playlist") -> bool:
@@ -140,17 +186,18 @@ def add_history_entry(track_key: str, source: str = "playlist") -> bool:
             "source": source,
         }
     )
-    save_history(history)
-    return True
+    return save_history(history)
 
 
-def clear_history() -> None:
+def clear_history() -> bool:
     """Delete all history entries."""
-    save_history([])
+    return save_history([])
 
 
 def all_keys() -> list[str]:
-    return sorted(library.keys(), key=int)
+    numeric_keys = [key for key in library.keys() if key.isdigit()]
+    non_numeric_keys = [key for key in library.keys() if not key.isdigit()]
+    return sorted(numeric_keys, key=int) + sorted(non_numeric_keys)
 
 
 def list_all() -> str:
@@ -178,10 +225,10 @@ def get_artist(key: str) -> str | None:
     return item.artist
 
 
-def get_rating(key: str) -> int:
+def get_rating(key: str) -> int | None:
     item = get_item(key)
     if item is None:
-        return -1
+        return None
     return item.rating
 
 
@@ -189,9 +236,14 @@ def set_rating(key: str, rating: int, auto_save: bool = True) -> bool:
     item = get_item(key)
     if item is None:
         return False
+
+    old_rating = item.rating
     item.set_rating(rating)
-    if auto_save:
-        save_library()
+
+    if auto_save and not save_library():
+        item.set_rating(old_rating)
+        return False
+
     return True
 
 
@@ -215,22 +267,29 @@ def update_track_info(
     if name == "" or artist == "":
         return False
 
+    old_item = item
     play_count = item.play_count
 
-    if album != "" or year is not None:
-        library[key] = AlbumTrack(name, artist, rating, play_count, album, year)
-    else:
-        library[key] = LibraryItem(name, artist, rating, play_count)
+    should_be_album_track = isinstance(item, AlbumTrack) or album != "" or year is not None
 
-    if auto_save:
-        save_library()
+    if should_be_album_track:
+        new_item = AlbumTrack(name, artist, rating, play_count, album, year)
+    else:
+        new_item = LibraryItem(name, artist, rating, play_count)
+
+    library[key] = new_item
+
+    if auto_save and not save_library():
+        library[key] = old_item
+        return False
+
     return True
 
 
-def get_play_count(key: str) -> int:
+def get_play_count(key: str) -> int | None:
     item = get_item(key)
     if item is None:
-        return -1
+        return None
     return item.play_count
 
 
@@ -238,9 +297,14 @@ def increment_play_count(key: str, auto_save: bool = True) -> bool:
     item = get_item(key)
     if item is None:
         return False
+
+    old_count = item.play_count
     item.increment_play_count()
-    if auto_save:
-        save_library()
+
+    if auto_save and not save_library():
+        item.set_play_count(old_count)
+        return False
+
     return True
 
 
@@ -274,24 +338,51 @@ def filter_tracks_by_rating(rating: int) -> str:
 
 
 def get_next_key() -> str:
-    if not library:
+    numeric_keys = [int(key) for key in library.keys() if key.isdigit()]
+    if not numeric_keys:
         return "01"
-    max_key = max(int(key) for key in library)
-    return str(max_key + 1).zfill(2)
+    return str(max(numeric_keys) + 1).zfill(2)
 
 
-def add_track(name: str, artist: str, rating: int = 0) -> str:
+def add_track(
+    name: str,
+    artist: str,
+    rating: int = 0,
+    album: str = "",
+    year: int | None = None,
+) -> str | None:
+    name = name.strip()
+    artist = artist.strip()
+    album = album.strip()
+
+    if name == "" or artist == "":
+        return None
+
     key = get_next_key()
-    library[key] = LibraryItem(name, artist, rating)
-    save_library()
+
+    if album != "" or year is not None:
+        library[key] = AlbumTrack(name, artist, rating, 0, album, year)
+    else:
+        library[key] = LibraryItem(name, artist, rating)
+
+    if not save_library():
+        del library[key]
+        return None
+
     return key
 
 
 def delete_track(key: str) -> bool:
     if key not in library:
         return False
+
+    old_item = library[key]
     del library[key]
-    save_library()
+
+    if not save_library():
+        library[key] = old_item
+        return False
+
     return True
 
 
@@ -315,6 +406,7 @@ def get_statistics() -> dict:
     average_rating = 0.0 if total_tracks == 0 else sum(track["rating"] for track in tracks) / total_tracks
     most_played = max(tracks, key=lambda track: track["play_count"], default=None)
     highest_rated = max(tracks, key=lambda track: track["rating"], default=None)
+
     return {
         "tracks": tracks,
         "total_tracks": total_tracks,
