@@ -1,1 +1,58 @@
-[]
+[
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "played_at": "2026-04-11 16:44:14",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-11 16:44:14",
+    "source": "playlist"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-11 16:44:14",
+    "source": "playlist"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-11 16:44:28",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-11 16:44:58",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "played_at": "2026-04-11 16:45:55",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-11 16:45:56",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-11 16:45:58",
+    "source": "playlist_skip"
+  }
+]
