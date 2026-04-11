@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 from tkinter import ttk
 
+from . import cover_manager
 from . import font_manager as fonts
 from . import track_library as lib
 from .gui_helpers import set_text
@@ -10,7 +11,8 @@ from .validation import get_valid_rating, normalise_track_number
 
 TEXT_BG = "#FFFFFF"
 TEXT_FG = "#111827"
-TEXT_BORDER = "#D6DAE5"
+CANVAS_BG = "#FFFFFF"
+CANVAS_BORDER = "#D6DAE5"
 
 
 class TrackViewer:
@@ -18,7 +20,9 @@ class TrackViewer:
 
     def __init__(self, window):
         self.window = window
-        window.geometry("1080x600")
+        self.cover_image = None
+
+        window.geometry("1240x680")
         window.title("View Tracks")
         fonts.apply_theme(window)
         window.columnconfigure(0, weight=1)
@@ -76,7 +80,7 @@ class TrackViewer:
         details_frame = ttk.LabelFrame(window, text="Selected Track", style="Section.TLabelframe")
         details_frame.grid(row=2, column=1, sticky="nsew", padx=(6, 12), pady=8)
         details_frame.columnconfigure(0, weight=1)
-        details_frame.rowconfigure(0, weight=1)
+        details_frame.rowconfigure(2, weight=1)
 
         self.list_txt = tkst.ScrolledText(
             library_frame,
@@ -91,10 +95,27 @@ class TrackViewer:
         )
         self.list_txt.grid(row=0, column=0, sticky="nsew", padx=8, pady=8)
 
+        cover_title_lbl = ttk.Label(details_frame, text="Track Cover")
+        cover_title_lbl.grid(row=0, column=0, sticky="w", padx=8, pady=(8, 4))
+
+        self.cover_canvas = tk.Canvas(
+            details_frame,
+            width=240,
+            height=240,
+            bg=CANVAS_BG,
+            highlightthickness=1,
+            highlightbackground=CANVAS_BORDER,
+            bd=0,
+        )
+        self.cover_canvas.grid(row=1, column=0, sticky="n", padx=8, pady=(0, 8))
+
+        self.cover_caption_lbl = ttk.Label(details_frame, text="No track selected yet.")
+        self.cover_caption_lbl.grid(row=2, column=0, sticky="nw", padx=8, pady=(0, 6))
+
         self.track_txt = tkst.ScrolledText(
             details_frame,
-            width=34,
-            height=18,
+            width=38,
+            height=14,
             wrap="word",
             bg=TEXT_BG,
             fg=TEXT_FG,
@@ -102,7 +123,7 @@ class TrackViewer:
             relief="solid",
             borderwidth=1,
         )
-        self.track_txt.grid(row=0, column=0, sticky="nsew", padx=8, pady=8)
+        self.track_txt.grid(row=3, column=0, sticky="nsew", padx=8, pady=8)
 
         self.status_lbl = ttk.Label(window, text="", style="Status.TLabel")
         self.status_lbl.grid(row=3, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 10))
@@ -111,26 +132,117 @@ class TrackViewer:
 
         self.list_tracks_clicked()
         set_text(self.track_txt, "Choose a track number and click 'View Track Details'.")
+        self.display_cover_placeholder()
 
     def _handle_focus_refresh(self, event=None):
         current_list = lib.list_all()
         set_text(self.list_txt, current_list)
+
+    def display_cover_placeholder(self, title="No Track Selected", subtitle="Select a track to view its cover."):
+        self.cover_image = None
+        self.cover_canvas.delete("all")
+
+        self.cover_canvas.create_rectangle(
+            18,
+            18,
+            222,
+            222,
+            outline="#CBD5E1",
+            width=2,
+            fill="#F8FAFC",
+        )
+        self.cover_canvas.create_text(
+            120,
+            95,
+            text=title,
+            font=("Segoe UI", 13, "bold"),
+            fill="#0F172A",
+            width=180,
+            justify="center",
+        )
+        self.cover_canvas.create_text(
+            120,
+            145,
+            text=subtitle,
+            font=("Segoe UI", 10),
+            fill="#475569",
+            width=180,
+            justify="center",
+        )
+
+        self.cover_caption_lbl.configure(text="Add PNG cover files later if you want a richer interface.")
+
+    def display_track_cover(self, track_key):
+        track_name = lib.get_name(track_key) or "Unknown Track"
+        artist_name = lib.get_artist(track_key) or "Unknown Artist"
+
+        self.cover_canvas.delete("all")
+        self.cover_image = cover_manager.load_cover_image(track_key, max_size=190)
+
+        if self.cover_image is not None:
+            self.cover_canvas.create_image(120, 120, image=self.cover_image)
+            self.cover_caption_lbl.configure(
+                text=f"Showing cover for track {track_key}: {track_name} — {artist_name}"
+            )
+            return
+
+        self.cover_canvas.create_rectangle(
+            18,
+            18,
+            222,
+            222,
+            outline="#C7D2FE",
+            width=2,
+            fill="#EEF2FF",
+        )
+        self.cover_canvas.create_text(
+            120,
+            78,
+            text=track_name,
+            font=("Segoe UI", 12, "bold"),
+            fill="#312E81",
+            width=180,
+            justify="center",
+        )
+        self.cover_canvas.create_text(
+            120,
+            115,
+            text=artist_name,
+            font=("Segoe UI", 10),
+            fill="#4338CA",
+            width=180,
+            justify="center",
+        )
+        self.cover_canvas.create_text(
+            120,
+            165,
+            text=f"No cover image found for {track_key}.\nUse {track_key}.png or default.png",
+            font=("Segoe UI", 10),
+            fill="#475569",
+            width=180,
+            justify="center",
+        )
+
+        self.cover_caption_lbl.configure(text=cover_manager.get_cover_folder_text())
 
     def view_track_clicked(self):
         track_key = normalise_track_number(self.input_txt.get())
 
         if track_key is None:
             set_text(self.track_txt, "Please enter digits only for the track number.")
+            self.display_cover_placeholder("Invalid Input", "Track number must contain digits only.")
             self.status_lbl.configure(text="Track number must contain digits only.")
             return
 
         track_details = lib.get_details(track_key)
         if track_details is None:
             set_text(self.track_txt, f"Track {track_key} was not found.")
+            self.display_cover_placeholder("Track Not Found", f"No track exists with number {track_key}.")
             self.status_lbl.configure(text="That track number does not exist.")
             return
 
         set_text(self.track_txt, track_details)
+        self.display_track_cover(track_key)
         self.status_lbl.configure(text=f"Showing details for track {track_key}.")
 
     def list_tracks_clicked(self):

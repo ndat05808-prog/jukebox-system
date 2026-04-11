@@ -51,7 +51,7 @@ class AddRemoveTracks:
         self.remove_input = ttk.Entry(remove_frame, width=8)
         self.remove_input.grid(row=0, column=1, padx=8, pady=8)
 
-        remove_btn = ttk.Button(remove_frame, text="Delete Track", command=self.remove_track_clicked)
+        remove_btn = ttk.Button(remove_frame, text="Delete Track", command=self.remove_track_clicked, style="Danger.TButton")
         remove_btn.grid(row=0, column=2, padx=8, pady=8)
 
         list_frame = ttk.LabelFrame(window, text="Current Library", style="Section.TLabelframe")

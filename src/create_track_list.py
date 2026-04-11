@@ -58,7 +58,8 @@ class CreateTrackList:
         self.remove_input.grid(row=0, column=5, padx=8, pady=8)
         self.remove_input.bind("<Return>", lambda event: self.remove_track_clicked())
 
-        remove_btn = ttk.Button(add_frame, text="Remove Track", command=self.remove_track_clicked)
+        remove_btn = ttk.Button(add_frame, text="Remove Track", command=self.remove_track_clicked,
+                                style="Danger.TButton")
         remove_btn.grid(row=0, column=6, padx=8, pady=8)
 
         move_frame = ttk.LabelFrame(window, text="Reorder Playlist / Playback", style="Section.TLabelframe")
@@ -79,7 +80,7 @@ class CreateTrackList:
         play_btn = ttk.Button(move_frame, text="Play Playlist", command=self.play_playlist_clicked)
         play_btn.grid(row=0, column=4, padx=8, pady=8)
 
-        reset_btn = ttk.Button(move_frame, text="Reset Playlist", command=self.reset_playlist_clicked)
+        reset_btn = ttk.Button(move_frame, text="Reset Playlist", command=self.reset_playlist_clicked, style="Danger.TButton")
         reset_btn.grid(row=0, column=5, padx=8, pady=8)
 
         load_current_btn = ttk.Button(move_frame, text="Load Current Track", command=self.load_current_track_clicked)
@@ -110,7 +111,7 @@ class CreateTrackList:
         list_playlists_btn = ttk.Button(save_frame, text="List Playlists", command=self.list_playlists_clicked)
         list_playlists_btn.grid(row=0, column=4, padx=8, pady=8)
 
-        delete_playlist_btn = ttk.Button(save_frame, text="Delete Playlist", command=self.delete_playlist_clicked)
+        delete_playlist_btn = ttk.Button(save_frame, text="Delete Playlist", command=self.delete_playlist_clicked, style="Danger.TButton")
         delete_playlist_btn.grid(row=0, column=5, padx=8, pady=8)
 
         rename_playlist_btn = ttk.Button(
