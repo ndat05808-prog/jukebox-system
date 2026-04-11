@@ -11,7 +11,7 @@
     "name": "Here Comes the Sun",
     "artist": "The Beatles",
     "rating": 5,
-    "play_count": 4,
+    "play_count": 8,
     "album": "Abbey Road",
     "year": 1969
   },
@@ -27,15 +27,17 @@
     "name": "Three Little Birds",
     "artist": "Bob Marley",
     "rating": 1,
-    "play_count": 0,
+    "play_count": 3,
     "album": "Exodus",
     "year": 1977
   },
   "05": {
-    "type": "LibraryItem",
-    "name": "You've Got a Friend",
-    "artist": "James Taylor",
-    "rating": 3,
-    "play_count": 1
+    "type": "AlbumTrack",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "rating": 4,
+    "play_count": 4,
+    "album": "Đánh đổi",
+    "year": 2035
   }
 }
