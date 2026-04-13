@@ -39,5 +39,14 @@
     "play_count": 4,
     "album": "Đánh đổi",
     "year": 2035
+  },
+  "06": {
+    "type": "AlbumTrack",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "rating": 5,
+    "play_count": 0,
+    "album": "Simple Love",
+    "year": 2018
   }
 }
