@@ -3,10 +3,10 @@ import tkinter.scrolledtext as tkst
 from pathlib import Path
 from tkinter import messagebox, simpledialog, ttk
 
-import font_manager as fonts
-import track_library as lib
-from gui_helpers import set_text
-from validation import (
+from . import font_manager as fonts
+from . import track_library as lib
+from .gui_helpers import set_text
+from .validation import (
     get_valid_position,
     normalise_playlist_name,
     normalise_track_number,

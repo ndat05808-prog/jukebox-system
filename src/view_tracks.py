@@ -2,10 +2,11 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 from tkinter import messagebox, ttk
 
-import font_manager as fonts
-import track_library as lib
-from gui_helpers import set_text
-from validation import get_valid_rating, get_valid_year, normalise_track_number
+from . import cover_manager
+from . import font_manager as fonts
+from . import track_library as lib
+from .gui_helpers import set_text
+from .validation import get_valid_rating, get_valid_year, normalise_track_number
 
 
 TEXT_BG = "#FFFFFF"

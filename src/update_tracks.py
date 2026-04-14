@@ -2,11 +2,11 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 from tkinter import ttk
 
-import font_manager as fonts
-import track_library as lib
-from gui_helpers import set_text
-from library_item import AlbumTrack
-from validation import get_valid_rating, get_valid_year, normalise_track_number
+from . import font_manager as fonts
+from . import track_library as lib
+from .gui_helpers import set_text
+from .library_item import AlbumTrack
+from .validation import get_valid_rating, get_valid_year, normalise_track_number
 
 
 class UpdateTracks:

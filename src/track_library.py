@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from library_item import AlbumTrack, LibraryItem
+from .library_item import AlbumTrack, LibraryItem
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_DIR / "data"

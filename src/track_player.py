@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 
-import font_manager as fonts
-from add_remove_tracks import AddRemoveTracks
-from create_track_list import CreateTrackList
-from track_statistics import TrackStatistics
-from update_tracks import UpdateTracks
-from view_tracks import TrackViewer
+from . import font_manager as fonts
+from .add_remove_tracks import AddRemoveTracks
+from .create_track_list import CreateTrackList
+from .track_statistics import TrackStatistics
+from .update_tracks import UpdateTracks
+from .view_tracks import TrackViewer
 
 
 
