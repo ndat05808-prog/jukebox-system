@@ -2,9 +2,9 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 from tkinter import messagebox, ttk
 
-from . import font_manager as fonts
-from . import track_library as lib
-from .gui_helpers import set_text
+import font_manager as fonts
+import track_library as lib
+from gui_helpers import set_text
 
 
 TEXT_BG = "#FFFFFF"
