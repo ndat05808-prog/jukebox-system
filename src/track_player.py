@@ -9,7 +9,6 @@ from .update_tracks import UpdateTracks
 from .view_tracks import TrackViewer
 
 
-
 class JukeBoxApp:
     def __init__(self):
         self.window = tk.Tk()
@@ -120,6 +119,6 @@ def main():
     app = JukeBoxApp()
     app.run()
 
+
 if __name__ == "__main__":
-    app = JukeBoxApp()
-    app.window.mainloop()
+    main()
