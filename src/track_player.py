@@ -7,6 +7,7 @@ from .create_track_list import CreateTrackList
 from .track_statistics import TrackStatistics
 from .update_tracks import UpdateTracks
 from .view_tracks import TrackViewer
+from view_tracks import TrackViewer
 
 
 class JukeBoxApp:
