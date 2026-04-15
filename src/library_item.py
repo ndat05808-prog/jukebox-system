@@ -4,12 +4,6 @@ from __future__ import annotations
 
 
 class LibraryItem:
-    """Represents a single track in the music library.
-
-    The class stores the basic data needed by the coursework:
-    track name, artist, rating, and play count.
-    """
-
     def __init__(self, name: str, artist: str, rating: int = 0, play_count: int = 0):
         self.name = name.strip()
         self.artist = artist.strip()
@@ -19,11 +13,6 @@ class LibraryItem:
         self.set_play_count(play_count)
 
     def set_rating(self, rating: int) -> None:
-        """Store a rating between 0 and 5 inclusive.
-
-        A value outside the range is clipped to the nearest valid value so the
-        object always stays in a valid state.
-        """
         rating = int(rating)
         if rating < 0:
             rating = 0
@@ -32,30 +21,21 @@ class LibraryItem:
         self.rating = rating
 
     def set_play_count(self, play_count: int) -> None:
-        """Store a play count that cannot drop below zero."""
         play_count = int(play_count)
         if play_count < 0:
             play_count = 0
         self.play_count = play_count
 
     def increment_play_count(self) -> None:
-        """Increase the number of times the track has been played by one."""
         self.play_count += 1
 
     def stars(self) -> str:
-        """Return the current rating as a row of stars."""
-        return "*" * self.rating
+        return "★" * self.rating + "☆" * (5 - self.rating)
 
     def info(self) -> str:
-        """Return one short line used when listing tracks in the library."""
-        star_text = self.stars()
-        base = f"{self.name} - {self.artist}"
-        if star_text == "":
-            return base
-        return f"{base} {star_text}"
+        return f"{self.name} - {self.artist} {self.stars()}"
 
     def details(self, track_key: str | None = None) -> str:
-        """Return a multi-line description used by the GUI detail view."""
         heading = f"Track number: {track_key}\n" if track_key is not None else ""
         return (
             f"{heading}"
@@ -66,14 +46,12 @@ class LibraryItem:
         )
 
     def matches(self, keyword: str) -> bool:
-        """Return True when the keyword appears in searchable fields."""
         keyword = keyword.lower().strip()
         if keyword == "":
             return True
         return keyword in self.name.lower() or keyword in self.artist.lower()
 
     def to_dict(self) -> dict:
-        """Convert the object to a plain dictionary for JSON storage."""
         return {
             "type": self.__class__.__name__,
             "name": self.name,
@@ -84,7 +62,6 @@ class LibraryItem:
 
     @classmethod
     def from_dict(cls, data: dict) -> "LibraryItem":
-        """Create a LibraryItem from JSON data."""
         return cls(
             data.get("name", "Unknown Track"),
             data.get("artist", "Unknown Artist"),
@@ -94,13 +71,6 @@ class LibraryItem:
 
 
 class AlbumTrack(LibraryItem):
-    """A specialised track that also stores album information.
-
-    This subclass demonstrates inheritance and polymorphism for the coursework.
-    The GUI calls details() on the base class interface, but AlbumTrack can
-    extend the returned information with album-specific fields.
-    """
-
     def __init__(
         self,
         name: str,

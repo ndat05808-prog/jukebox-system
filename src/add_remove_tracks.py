@@ -1,78 +1,150 @@
 import tkinter as tk
-import tkinter.scrolledtext as tkst
 from tkinter import messagebox, ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import set_text
+from .gui_helpers import clear_tree, stars_text
 from .validation import get_valid_rating, get_valid_year, normalise_track_number
 
 
 class AddRemoveTracks:
     def __init__(self, window):
         self.window = window
-        window.geometry("1120x620")
+        window.geometry("1200x760")
+        window.minsize(1080, 680)
         window.title("Add / Remove Tracks")
         fonts.apply_theme(window)
 
-        title_lbl = ttk.Label(window, text="Library Management", style="Title.TLabel")
-        title_lbl.grid(row=0, column=0, columnspan=2, sticky="w", padx=12, pady=(12, 6))
+        window.columnconfigure(0, weight=3)
+        window.columnconfigure(1, weight=2)
+        window.rowconfigure(1, weight=1)
 
-        add_frame = ttk.LabelFrame(window, text="Add New Track", style="Section.TLabelframe")
-        add_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=12, pady=6)
+        ttk.Label(window, text="Add / Remove Tracks", style="Hero.TLabel").grid(row=0, column=0, columnspan=2, sticky="w", padx=18, pady=(18, 6))
+        ttk.Label(window, text="Manage your library with a cleaner dark dashboard.", style="Muted.TLabel").grid(row=0, column=0, columnspan=2, sticky="w", padx=18, pady=(56, 12))
 
-        ttk.Label(add_frame, text="Name").grid(row=0, column=0, padx=8, pady=8)
-        self.name_input = ttk.Entry(add_frame, width=24)
-        self.name_input.grid(row=0, column=1, padx=8, pady=8)
+        left = ttk.Frame(window, style="Root.TFrame")
+        left.grid(row=1, column=0, sticky="nsew", padx=(18, 10), pady=10)
+        left.columnconfigure(0, weight=1)
+        left.rowconfigure(1, weight=1)
 
-        ttk.Label(add_frame, text="Artist").grid(row=0, column=2, padx=8, pady=8)
-        self.artist_input = ttk.Entry(add_frame, width=24)
-        self.artist_input.grid(row=0, column=3, padx=8, pady=8)
+        right = ttk.Frame(window, style="Root.TFrame")
+        right.grid(row=1, column=1, sticky="nsew", padx=(10, 18), pady=10)
+        right.columnconfigure(0, weight=1)
 
-        ttk.Label(add_frame, text="Rating (0-5)").grid(row=0, column=4, padx=8, pady=8)
-        self.rating_input = ttk.Entry(add_frame, width=8)
-        self.rating_input.grid(row=0, column=5, padx=8, pady=8)
+        form_card = ttk.Frame(left, style="Card.TFrame", padding=18)
+        form_card.grid(row=0, column=0, sticky="ew")
+        for col in range(4):
+            form_card.columnconfigure(col, weight=1)
 
-        ttk.Label(add_frame, text="Album").grid(row=1, column=0, padx=8, pady=8)
-        self.album_input = ttk.Entry(add_frame, width=24)
-        self.album_input.grid(row=1, column=1, padx=8, pady=8)
+        ttk.Label(form_card, text="Add New Track", style="CardTitle.TLabel").grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 12))
 
-        ttk.Label(add_frame, text="Year").grid(row=1, column=2, padx=8, pady=8)
-        self.year_input = ttk.Entry(add_frame, width=12)
-        self.year_input.grid(row=1, column=3, padx=8, pady=8)
+        ttk.Label(form_card, text="Name", style="Card.TLabel").grid(row=1, column=0, sticky="w", padx=(0, 10), pady=6)
+        self.name_input = ttk.Entry(form_card)
+        self.name_input.grid(row=2, column=0, sticky="ew", padx=(0, 10), pady=(0, 10))
 
-        add_btn = ttk.Button(add_frame, text="Add Track", command=self.add_track_clicked)
-        add_btn.grid(row=1, column=5, padx=8, pady=8, sticky="ew")
+        ttk.Label(form_card, text="Artist", style="Card.TLabel").grid(row=1, column=1, sticky="w", padx=(0, 10), pady=6)
+        self.artist_input = ttk.Entry(form_card)
+        self.artist_input.grid(row=2, column=1, sticky="ew", padx=(0, 10), pady=(0, 10))
 
-        remove_frame = ttk.LabelFrame(window, text="Delete Track", style="Section.TLabelframe")
-        remove_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=12, pady=6)
+        ttk.Label(form_card, text="Rating", style="Card.TLabel").grid(row=1, column=2, sticky="w", padx=(0, 10), pady=6)
+        self.rating_input = ttk.Combobox(form_card, values=["0", "1", "2", "3", "4", "5"], state="readonly")
+        self.rating_input.grid(row=2, column=2, sticky="ew", padx=(0, 10), pady=(0, 10))
+        self.rating_input.set("0")
 
-        ttk.Label(remove_frame, text="Track Number").grid(row=0, column=0, padx=8, pady=8)
-        self.remove_input = ttk.Entry(remove_frame, width=8)
-        self.remove_input.grid(row=0, column=1, padx=8, pady=8)
+        ttk.Label(form_card, text="Year", style="Card.TLabel").grid(row=1, column=3, sticky="w", pady=6)
+        self.year_input = ttk.Entry(form_card)
+        self.year_input.grid(row=2, column=3, sticky="ew", pady=(0, 10))
 
-        remove_btn = ttk.Button(remove_frame, text="Delete Track", command=self.remove_track_clicked, style="Danger.TButton")
-        remove_btn.grid(row=0, column=2, padx=8, pady=8)
+        ttk.Label(form_card, text="Album", style="Card.TLabel").grid(row=3, column=0, sticky="w", padx=(0, 10), pady=6)
+        self.album_input = ttk.Entry(form_card)
+        self.album_input.grid(row=4, column=0, columnspan=3, sticky="ew", padx=(0, 10), pady=(0, 10))
 
-        list_frame = ttk.LabelFrame(window, text="Current Library", style="Section.TLabelframe")
-        list_frame.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=12, pady=8)
-        list_frame.columnconfigure(0, weight=1)
-        list_frame.rowconfigure(0, weight=1)
+        ttk.Button(form_card, text="Add Track", style="Neon.TButton", command=self.add_track_clicked).grid(row=4, column=3, sticky="ew", pady=(0, 10))
 
-        self.list_txt = tkst.ScrolledText(list_frame, width=96, height=22, wrap="none")
-        self.list_txt.grid(row=0, column=0, sticky="nsew", padx=8, pady=8)
+        table_card = ttk.Frame(left, style="Card.TFrame", padding=18)
+        table_card.grid(row=1, column=0, sticky="nsew", pady=(14, 0))
+        table_card.columnconfigure(0, weight=1)
+        table_card.rowconfigure(1, weight=1)
 
-        self.status_lbl = ttk.Label(window, text="", style="Status.TLabel")
-        self.status_lbl.grid(row=4, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 10))
+        header = ttk.Frame(table_card, style="Card.TFrame")
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        header.columnconfigure(0, weight=1)
+        ttk.Label(header, text="Current Library", style="CardTitle.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Button(header, text="Refresh", style="Ghost.TButton", command=self.refresh_list).grid(row=0, column=1, sticky="e")
 
-        window.columnconfigure(0, weight=1)
-        window.columnconfigure(1, weight=1)
-        window.rowconfigure(3, weight=1)
+        columns = ("key", "name", "artist", "album", "year", "rating")
+        self.tree = ttk.Treeview(table_card, columns=columns, show="headings")
+        headings = {
+            "key": ("#", 60),
+            "name": ("Song Title", 240),
+            "artist": ("Artist", 180),
+            "album": ("Album", 180),
+            "year": ("Year", 80),
+            "rating": ("Rating", 140),
+        }
+        for column, (label, width) in headings.items():
+            self.tree.heading(column, text=label)
+            self.tree.column(column, width=width, anchor="w")
+        self.tree.grid(row=1, column=0, sticky="nsew")
+        self.tree.bind("<<TreeviewSelect>>", self._tree_selected)
+
+        right_card = ttk.Frame(right, style="Card.TFrame", padding=18)
+        right_card.grid(row=0, column=0, sticky="nsew")
+        right_card.columnconfigure(0, weight=1)
+
+        ttk.Label(right_card, text="Delete Track", style="CardTitle.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(right_card, text="Select a row or enter a track number manually.", style="CardMuted.TLabel").grid(row=1, column=0, sticky="w", pady=(4, 12))
+
+        ttk.Label(right_card, text="Track Number", style="Card.TLabel").grid(row=2, column=0, sticky="w")
+        self.remove_input = ttk.Entry(right_card)
+        self.remove_input.grid(row=3, column=0, sticky="ew", pady=(6, 12))
+
+        ttk.Button(right_card, text="Delete Track", style="Danger.TButton", command=self.remove_track_clicked).grid(row=4, column=0, sticky="ew")
+
+        self.preview = tk.Text(right_card, height=18, wrap="word")
+        fonts.style_text_widget(self.preview)
+        self.preview.grid(row=5, column=0, sticky="nsew", pady=(16, 0))
+        right_card.rowconfigure(5, weight=1)
+        self.preview.configure(state="disabled")
+
+        self.status_lbl = ttk.Label(window, text="Ready.", style="Status.TLabel")
+        self.status_lbl.grid(row=2, column=0, columnspan=2, sticky="w", padx=18, pady=(0, 16))
 
         self.refresh_list()
 
+    def _set_preview(self, content: str):
+        self.preview.configure(state="normal")
+        self.preview.delete("1.0", tk.END)
+        self.preview.insert("1.0", content)
+        self.preview.configure(state="disabled")
+
+    def _tree_selected(self, event=None):
+        selected = self.tree.selection()
+        if not selected:
+            return
+        item = self.tree.item(selected[0], "values")
+        track_key = item[0]
+        self.remove_input.delete(0, tk.END)
+        self.remove_input.insert(0, track_key)
+        details = lib.get_details(track_key) or "Track not found."
+        self._set_preview(details)
+
     def refresh_list(self):
-        set_text(self.list_txt, lib.list_all())
+        clear_tree(self.tree)
+        for record in lib.get_track_records():
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    record["key"],
+                    record["name"],
+                    record["artist"],
+                    record["album"] or "—",
+                    record["year"] or "—",
+                    stars_text(record["rating"]),
+                ),
+            )
+        self._set_preview("Select a track to see its full details here.")
         self.status_lbl.configure(text="Library list refreshed.")
 
     def add_track_clicked(self):
@@ -80,17 +152,15 @@ class AddRemoveTracks:
         artist = self.artist_input.get().strip()
         rating_text = self.rating_input.get().strip()
         album = self.album_input.get().strip()
+        year_text = self.year_input.get().strip()
 
         if name == "" or artist == "":
             self.status_lbl.configure(text="Name and artist cannot be empty.")
             return
-
         rating = get_valid_rating(rating_text, allow_zero=True)
         if rating is None:
             self.status_lbl.configure(text="Rating must be a whole number from 0 to 5.")
             return
-
-        year_text = self.year_input.get().strip()
         year = get_valid_year(year_text)
         if year_text != "" and year is None:
             self.status_lbl.configure(text="Year must be between 1900 and 2100, or left blank.")
@@ -98,52 +168,41 @@ class AddRemoveTracks:
 
         key = lib.add_track(name, artist, rating, album=album, year=year)
         if key is None:
-            self.status_lbl.configure(text="Track could not be saved. Please try again.")
+            self.status_lbl.configure(text="Track could not be saved.")
             return
 
         self.refresh_list()
-        if album != "" or year is not None:
-            self.status_lbl.configure(text=f"Added album track {key}: '{name}' by {artist}.")
-        else:
-            self.status_lbl.configure(text=f"Added track {key}: '{name}' by {artist}.")
+        self._set_preview(lib.get_details(key) or "Track saved.")
+        self.status_lbl.configure(text=f"Added track {key}: '{name}' by {artist}.")
 
-        self.name_input.delete(0, tk.END)
-        self.artist_input.delete(0, tk.END)
-        self.rating_input.delete(0, tk.END)
-        self.album_input.delete(0, tk.END)
-        self.year_input.delete(0, tk.END)
+        for widget in (self.name_input, self.artist_input, self.album_input, self.year_input):
+            widget.delete(0, tk.END)
+        self.rating_input.set("0")
 
     def remove_track_clicked(self):
         track_key = normalise_track_number(self.remove_input.get())
         if track_key is None:
             self.status_lbl.configure(text="Please enter a valid track number.")
             return
-
         track_name = lib.get_name(track_key)
         if track_name is None:
             self.status_lbl.configure(text=f"Track {track_key} does not exist.")
             return
-
-        confirmed = messagebox.askyesno(
-            "Delete Track",
-            f"Are you sure you want to delete track {track_key}: '{track_name}'?",
-            parent=self.window,
-        )
+        confirmed = messagebox.askyesno("Delete Track", f"Are you sure you want to delete track {track_key}: '{track_name}'?", parent=self.window)
         if not confirmed:
             self.status_lbl.configure(text="Delete track cancelled.")
             return
-
         if not lib.delete_track(track_key):
             self.status_lbl.configure(text="Track could not be deleted.")
             return
-
         self.refresh_list()
-        self.status_lbl.configure(text=f"Deleted track {track_key}: '{track_name}'.")
         self.remove_input.delete(0, tk.END)
+        self._set_preview("Track deleted successfully.")
+        self.status_lbl.configure(text=f"Deleted track {track_key}: '{track_name}'.")
 
 
 if __name__ == "__main__":
-    window = tk.Tk()
+    root = tk.Tk()
     fonts.configure()
-    AddRemoveTracks(window)
-    window.mainloop()
+    AddRemoveTracks(root)
+    root.mainloop()
