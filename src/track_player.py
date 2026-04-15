@@ -165,7 +165,7 @@ class JukeBoxApp:
         container = ttk.Frame(self.window, style="Root.TFrame", padding=(22, 20, 22, 12))
         container.grid(row=0, column=1, sticky="nsew")
         container.columnconfigure(0, weight=3)
-        container.columnconfigure(1, weight=1.15)
+        container.columnconfigure(1, weight=2)
         container.rowconfigure(2, weight=1)
 
         header = ttk.Frame(container, style="Root.TFrame")
