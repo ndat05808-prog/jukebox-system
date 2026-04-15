@@ -54,5 +54,187 @@
     "artist": "Louis Armstrong",
     "played_at": "2026-04-11 16:45:58",
     "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-15 23:04:28",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:35",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:37",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:38",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:38",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:39",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:39",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:39",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:39",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:40",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:40",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:40",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:40",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:42",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Vo Van Dat",
+    "artist": "Dat Join",
+    "played_at": "2026-04-15 23:04:43",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-15 23:04:44",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-15 23:04:46",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-15 23:04:47",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-15 23:05:59",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-15 23:06:01",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-15 23:06:35",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "played_at": "2026-04-15 23:06:37",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-15 23:06:38",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-15 23:06:38",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-15 23:06:39",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "played_at": "2026-04-15 23:06:41",
+    "source": "dashboard"
   }
 ]

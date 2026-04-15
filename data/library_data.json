@@ -4,14 +4,14 @@
     "name": "What a Wonderful World",
     "artist": "Louis Armstrong",
     "rating": 5,
-    "play_count": 5
+    "play_count": 6
   },
   "02": {
     "type": "AlbumTrack",
     "name": "Here Comes the Sun",
     "artist": "The Beatles",
     "rating": 5,
-    "play_count": 10,
+    "play_count": 11,
     "album": "Abbey Road",
     "year": 1969
   },
@@ -20,14 +20,14 @@
     "name": "Count on Me",
     "artist": "Bruno Mars",
     "rating": 3,
-    "play_count": 8
+    "play_count": 13
   },
   "04": {
     "type": "AlbumTrack",
     "name": "Three Little Birds",
     "artist": "Bob Marley",
     "rating": 1,
-    "play_count": 3,
+    "play_count": 6,
     "album": "Exodus",
     "year": 1977
   },
@@ -36,7 +36,7 @@
     "name": "Đạt Ngô",
     "artist": "Alex Đạt",
     "rating": 4,
-    "play_count": 4,
+    "play_count": 6,
     "album": "Đánh đổi",
     "year": 2035
   },
@@ -45,7 +45,7 @@
     "name": "Vo Van Dat",
     "artist": "Dat Join",
     "rating": 5,
-    "play_count": 0,
+    "play_count": 14,
     "album": "Simple Love",
     "year": 2018
   }
