@@ -20,7 +20,7 @@
     "name": "Count on Me",
     "artist": "Bruno Mars",
     "rating": 3,
-    "play_count": 0
+    "play_count": 1
   },
   "04": {
     "type": "AlbumTrack",
