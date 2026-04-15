@@ -17,9 +17,9 @@ from .view_tracks import TrackViewer
 class JukeBoxApp:
     def __init__(self):
         self.window = tk.Tk()
-        self.window.geometry("1600x920")
-        self.window.minsize(1380, 820)
         self.window.title("JukeBox")
+        self.window.minsize(1380, 820)
+        self.window.state("zoomed")
 
         fonts.configure()
         fonts.apply_theme(self.window)
@@ -47,20 +47,36 @@ class JukeBoxApp:
         sidebar.columnconfigure(0, weight=1)
 
         ttk.Label(sidebar, text="◉", style="Logo.TLabel").grid(row=0, column=0, sticky="w")
-        ttk.Label(sidebar, text="COMP1752\nJukeBox", style="Sidebar.TLabel", justify="left").grid(row=1, column=0, sticky="w", pady=(4, 26))
+        ttk.Label(
+            sidebar,
+            text="JukeBox Music",
+            style="Sidebar.TLabel",
+            justify="left"
+        ).grid(row=1, column=0, sticky="w", pady=(4, 26))
 
         nav_items = [
             ("Library", self.refresh_library),
-            ("Playlist Builder", lambda: self.open_child_window("create_track_list", "Opening Playlist Builder.", CreateTrackList)),
-            ("Add / Remove", lambda: self.open_child_window("add_remove_tracks", "Opening Add / Remove Tracks.", AddRemoveTracks)),
+            ("Playlist Builder",
+             lambda: self.open_child_window("create_track_list", "Opening Playlist Builder.", CreateTrackList)),
+            ("Add / Remove",
+             lambda: self.open_child_window("add_remove_tracks", "Opening Add / Remove Tracks.", AddRemoveTracks)),
             ("Statistics", lambda: self.open_child_window("statistics", "Opening Statistics window.", TrackStatistics)),
-            ("Update Tracks", lambda: self.open_child_window("update_tracks", "Opening Update Tracks window.", UpdateTracks)),
+            ("Update Tracks",
+             lambda: self.open_child_window("update_tracks", "Opening Update Tracks window.", UpdateTracks)),
             ("View Tracks", lambda: self.open_child_window("view_tracks", "Opening Library Browser.", TrackViewer)),
         ]
-        for index, (label, command) in enumerate(nav_items, start=2):
-            ttk.Button(sidebar, text=label, style="Sidebar.TButton", command=command).grid(row=index, column=0, sticky="ew", pady=4)
 
-        ttk.Button(sidebar, text="Close App", style="Danger.TButton", command=self.window.destroy).grid(row=20, column=0, sticky="ew", pady=(24, 0))
+        for index, (label, command) in enumerate(nav_items, start=2):
+            ttk.Button(sidebar, text=label, style="Sidebar.TButton", command=command).grid(
+                row=index, column=0, sticky="ew", pady=4
+            )
+
+        ttk.Button(
+            sidebar,
+            text="Close App",
+            style="Danger.TButton",
+            command=self.window.destroy
+        ).grid(row=20, column=0, sticky="ew", pady=(24, 0))
 
     def _build_main_area(self):
         container = ttk.Frame(self.window, style="Root.TFrame", padding=(18, 18, 18, 10))
@@ -90,17 +106,60 @@ class JukeBoxApp:
 
         control_card = ttk.Frame(top_filters, style="Card.TFrame", padding=14)
         control_card.grid(row=0, column=0, sticky="ew", pady=(0, 12))
-        for i in range(7):
+
+        for i in range(4):
             control_card.columnconfigure(i, weight=1)
-        ttk.Label(control_card, text="Quick Filters", style="CardTitle.TLabel").grid(row=0, column=0, sticky="w")
-        self.rating_filter = ttk.Combobox(control_card, values=["0", "1", "2", "3", "4", "5"], state="readonly")
+
+        ttk.Label(control_card, text="Quick Filters", style="CardTitle.TLabel").grid(
+            row=0, column=0, sticky="w", pady=(0, 10)
+        )
+
+        self.rating_filter = ttk.Combobox(
+            control_card,
+            values=["0", "1", "2", "3", "4", "5"],
+            state="readonly"
+        )
         self.rating_filter.grid(row=0, column=1, padx=8, sticky="ew")
         self.rating_filter.set("5")
-        ttk.Button(control_card, text="Filter by Rating", style="Ghost.TButton", command=self.filter_by_rating).grid(row=0, column=2, padx=8, sticky="ew")
-        ttk.Button(control_card, text="Show All", style="Ghost.TButton", command=self.refresh_library).grid(row=0, column=3, padx=8, sticky="ew")
-        ttk.Button(control_card, text="Play Selected", style="Neon.TButton", command=self.play_selected_track).grid(row=0, column=4, padx=8, sticky="ew")
-        ttk.Button(control_card, text="Open Playlist Builder", style="Ghost.TButton", command=lambda: self.open_child_window("create_track_list", "Opening Playlist Builder.", CreateTrackList)).grid(row=0, column=5, padx=8, sticky="ew")
-        ttk.Button(control_card, text="Refresh Stats", style="Ghost.TButton", command=self._refresh_stats_panel).grid(row=0, column=6, padx=(8, 0), sticky="ew")
+
+        ttk.Button(
+            control_card,
+            text="Filter",
+            style="Ghost.TButton",
+            command=self.filter_by_rating
+        ).grid(row=0, column=2, padx=8, sticky="ew")
+
+        ttk.Button(
+            control_card,
+            text="Show All",
+            style="Ghost.TButton",
+            command=self.refresh_library
+        ).grid(row=0, column=3, padx=(8, 0), sticky="ew")
+
+        ttk.Button(
+            control_card,
+            text="Play",
+            style="Neon.TButton",
+            command=self.play_selected_track
+        ).grid(row=1, column=0, pady=(10, 0), sticky="ew")
+
+        ttk.Button(
+            control_card,
+            text="Playlist",
+            style="Ghost.TButton",
+            command=lambda: self.open_child_window(
+                "create_track_list",
+                "Opening Playlist Builder.",
+                CreateTrackList
+            )
+        ).grid(row=1, column=1, padx=8, pady=(10, 0), sticky="ew")
+
+        ttk.Button(
+            control_card,
+            text="Refresh Stats",
+            style="Ghost.TButton",
+            command=self._refresh_stats_panel
+        ).grid(row=1, column=2, padx=8, pady=(10, 0), sticky="ew")
 
         table_card = ttk.Frame(top_filters, style="Card.TFrame", padding=18)
         table_card.grid(row=1, column=0, sticky="nsew")

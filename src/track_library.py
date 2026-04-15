@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .library_item import AlbumTrack, LibraryItem
 
-PROJECT_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
 

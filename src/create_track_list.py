@@ -7,7 +7,7 @@ from . import track_library as lib
 from .gui_helpers import clear_tree, stars_text
 from .validation import get_valid_position, normalise_playlist_name, normalise_track_number
 
-PROJECT_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 PLAYLIST_DIR = PROJECT_DIR / "playlists"
 PLAYLIST_DIR.mkdir(exist_ok=True)
 

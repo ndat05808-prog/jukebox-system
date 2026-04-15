@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import tkinter as tk
 
-PROJECT_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 COVERS_DIR = PROJECT_DIR / "assets" / "covers"
 COVERS_DIR.mkdir(parents=True, exist_ok=True)
 

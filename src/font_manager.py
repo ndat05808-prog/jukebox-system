@@ -64,7 +64,7 @@ def apply_theme(window: tk.Misc):
     style.configure("SmallMuted.TLabel", background=BG, foreground=MUTED, font=("Segoe UI", 9))
     style.configure("CardMuted.TLabel", background=CARD, foreground=MUTED)
     style.configure("Status.TLabel", background=BG, foreground=MUTED, font=("Segoe UI", 10))
-    style.configure("Sidebar.TLabel", background=PANEL, foreground=TEXT, font=("Segoe UI", 12, "bold"))
+    style.configure("Sidebar.TLabel", background=PANEL, foreground=TEXT, font=("Segoe UI", 14, "bold"))
     style.configure("Logo.TLabel", background=PANEL, foreground=ACCENT, font=("Segoe UI", 18, "bold"))
 
     style.configure("TLabelframe", background=BG, foreground=TEXT, bordercolor=BORDER, relief="solid", borderwidth=1)
