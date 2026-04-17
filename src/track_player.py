@@ -18,7 +18,7 @@ class JukeBoxApp:
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("JukeBox")
-        self.window.minsize(1400, 840)
+        self.window.minsize(1450, 860)
 
         try:
             self.window.state("zoomed")
@@ -35,7 +35,7 @@ class JukeBoxApp:
         self.cover_image = None
         self.player_cover_image = None
 
-        self.window.columnconfigure(0, minsize=220)
+        self.window.columnconfigure(0, minsize=210)
         self.window.columnconfigure(1, weight=1)
         self.window.rowconfigure(0, weight=1)
         self.window.rowconfigure(1, weight=0)
@@ -162,10 +162,11 @@ class JukeBoxApp:
         ).grid(row=9, column=0, sticky="ew", pady=(18, 0))
 
     def _build_main_area(self):
-        container = ttk.Frame(self.window, style="Root.TFrame", padding=(22, 20, 22, 12))
+        container = ttk.Frame(self.window, style="Root.TFrame", padding=(22, 20, 22, 10))
         container.grid(row=0, column=1, sticky="nsew")
-        container.columnconfigure(0, weight=3)
-        container.columnconfigure(1, weight=2)
+        container.columnconfigure(0, weight=5, minsize=820)
+        container.columnconfigure(1, weight=3, minsize=430)
+        container.rowconfigure(1, weight=0)
         container.rowconfigure(2, weight=1)
 
         header = ttk.Frame(container, style="Root.TFrame")
@@ -267,23 +268,35 @@ class JukeBoxApp:
         self.result_count_label = ttk.Label(table_header, text="0 track(s)", style="CardMuted.TLabel")
         self.result_count_label.grid(row=0, column=1, sticky="e")
 
+        table_wrap = ttk.Frame(table_card, style="Card.TFrame")
+        table_wrap.grid(row=1, column=0, sticky="nsew")
+        table_wrap.columnconfigure(0, weight=1)
+        table_wrap.rowconfigure(0, weight=1)
+
         columns = ("key", "title", "artist", "album", "year", "rating")
-        self.library_tree = ttk.Treeview(table_card, columns=columns, show="headings")
+        self.library_tree = ttk.Treeview(table_wrap, columns=columns, show="headings")
 
         headings = {
-            "key": ("#", 58),
-            "title": ("Song Title", 290),
-            "artist": ("Artist", 190),
-            "album": ("Album", 190),
-            "year": ("Year", 90),
-            "rating": ("Rating", 140),
+            "key": ("#", 55),
+            "title": ("Song Title", 260),
+            "artist": ("Artist", 170),
+            "album": ("Album", 170),
+            "year": ("Year", 80),
+            "rating": ("Rating", 120),
         }
 
         for column, (label, width) in headings.items():
             self.library_tree.heading(column, text=label)
-            self.library_tree.column(column, width=width, anchor="w")
+            self.library_tree.column(column, width=width, anchor="w", stretch=True)
 
-        self.library_tree.grid(row=1, column=0, sticky="nsew")
+        y_scroll = ttk.Scrollbar(table_wrap, orient="vertical", command=self.library_tree.yview)
+        x_scroll = ttk.Scrollbar(table_wrap, orient="horizontal", command=self.library_tree.xview)
+        self.library_tree.configure(yscrollcommand=y_scroll.set, xscrollcommand=x_scroll.set)
+
+        self.library_tree.grid(row=0, column=0, sticky="nsew")
+        y_scroll.grid(row=0, column=1, sticky="ns")
+        x_scroll.grid(row=1, column=0, sticky="ew")
+
         self.library_tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
         info_card = ttk.Frame(right_area, style="Card.TFrame", padding=18)
@@ -296,7 +309,7 @@ class JukeBoxApp:
         detail_top.columnconfigure(0, weight=0)
         detail_top.columnconfigure(1, weight=1)
 
-        self.cover_canvas = tk.Canvas(detail_top, width=200, height=200)
+        self.cover_canvas = tk.Canvas(detail_top, width=180, height=180)
         fonts.style_canvas(self.cover_canvas, bg=fonts.CARD_ALT)
         self.cover_canvas.grid(row=0, column=0, sticky="nw", padx=(0, 14))
 
@@ -304,14 +317,32 @@ class JukeBoxApp:
         meta_wrap.grid(row=0, column=1, sticky="nsew")
         meta_wrap.columnconfigure(0, weight=1)
 
-        self.detail_title = ttk.Label(meta_wrap, text="No track selected", style="CardTitle.TLabel")
+        self.detail_title = ttk.Label(
+            meta_wrap,
+            text="No track selected",
+            style="CardTitle.TLabel",
+            wraplength=220,
+            justify="left",
+        )
         self.detail_title.grid(row=0, column=0, sticky="w")
 
-        self.detail_artist = ttk.Label(meta_wrap, text="", style="CardMuted.TLabel")
+        self.detail_artist = ttk.Label(
+            meta_wrap,
+            text="",
+            style="CardMuted.TLabel",
+            wraplength=220,
+            justify="left",
+        )
         self.detail_artist.grid(row=1, column=0, sticky="w", pady=(4, 10))
 
-        self.detail_meta = ttk.Label(meta_wrap, text="", style="CardMuted.TLabel", justify="left")
-        self.detail_meta.grid(row=2, column=0, sticky="w")
+        self.detail_meta = ttk.Label(
+            meta_wrap,
+            text="",
+            style="CardMuted.TLabel",
+            justify="left",
+            wraplength=220,
+        )
+        self.detail_meta.grid(row=2, column=0, sticky="nw")
 
         btn_row = ttk.Frame(info_card, style="Card.TFrame")
         btn_row.grid(row=2, column=0, sticky="ew", pady=(4, 0))
@@ -454,28 +485,31 @@ class JukeBoxApp:
         self.cover_image = None
         self.cover_canvas.delete("all")
         self.cover_canvas.create_rectangle(
-            18, 18, 182, 182,
+            14, 14, 166, 166,
             outline=fonts.BORDER,
             width=2,
             fill=fonts.CARD_ALT
         )
         self.cover_canvas.create_text(
-            100, 90,
+            90, 80,
             text="No track selected",
             fill=fonts.TEXT,
-            font=("Segoe UI", 13, "bold"),
-            width=140
+            font=("Segoe UI", 12, "bold"),
+            width=120
         )
         self.cover_canvas.create_text(
-            100, 136,
-            text="Select a row to preview the track here.",
+            90, 122,
+            text="Select a row to preview.",
             fill=fonts.MUTED,
-            font=("Segoe UI", 10),
-            width=150
+            font=("Segoe UI", 9),
+            width=120
         )
+
         self.detail_title.configure(text="No track selected")
-        self.detail_artist.configure(text="")
-        self.detail_meta.configure(text="Use the main library table to start.")
+        self.detail_artist.configure(text="Artist: —")
+        self.detail_meta.configure(
+            text="Album: —\nYear: —\nTimes Played: —\nRating: —"
+        )
 
     def _set_player_empty(self):
         self.player_cover_image = None
@@ -506,15 +540,14 @@ class JukeBoxApp:
             return
 
         self.selected_track_key = track_key
-        self.detail_title.configure(text=item.name)
-        self.detail_artist.configure(text=item.artist)
 
         album = item.album if isinstance(item, AlbumTrack) and item.album else "—"
         year = item.year if isinstance(item, AlbumTrack) and item.year is not None else "—"
 
+        self.detail_title.configure(text=item.name)
+        self.detail_artist.configure(text=f"Artist: {item.artist}")
         self.detail_meta.configure(
             text=(
-                f"Artist: {item.artist}\n"
                 f"Album: {album}\n"
                 f"Year: {year}\n"
                 f"Times Played: {item.play_count}\n"
@@ -523,36 +556,36 @@ class JukeBoxApp:
         )
 
         self.cover_canvas.delete("all")
-        self.cover_image = cover_manager.load_cover_image(track_key, max_size=160)
+        self.cover_image = cover_manager.load_cover_image(track_key, max_size=150)
         if self.cover_image is not None:
-            self.cover_canvas.create_image(100, 100, image=self.cover_image)
+            self.cover_canvas.create_image(90, 90, image=self.cover_image)
         else:
             self.cover_canvas.create_rectangle(
-                18, 18, 182, 182,
+                14, 14, 166, 166,
                 outline=fonts.ACCENT,
                 width=2,
                 fill=fonts.CARD_ALT
             )
             self.cover_canvas.create_text(
-                100, 82,
+                90, 72,
                 text=item.name,
                 fill=fonts.TEXT,
-                font=("Segoe UI", 12, "bold"),
-                width=140
+                font=("Segoe UI", 11, "bold"),
+                width=120
             )
             self.cover_canvas.create_text(
-                100, 118,
+                90, 106,
                 text=item.artist,
                 fill=fonts.ACCENT,
                 font=("Segoe UI", 10),
-                width=140
+                width=120
             )
             self.cover_canvas.create_text(
-                100, 152,
-                text="No cover image found.",
+                90, 138,
+                text="No cover image",
                 fill=fonts.MUTED,
                 font=("Segoe UI", 9),
-                width=140
+                width=110
             )
 
     def _refresh_stats_panel(self):
