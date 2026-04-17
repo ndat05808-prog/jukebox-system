@@ -397,5 +397,243 @@
     "artist": "Dat Join",
     "played_at": "2026-04-16 15:33:06",
     "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:18:02",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:18:02",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:18:02",
+    "source": "playlist"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:18:08",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:18:08",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:18:08",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:18:10",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:18:18",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:18:18",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:18:18",
+    "source": "playlist"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:18:21",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:18:21",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:18:21",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:18:22",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:18:27",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:18:31",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:18:31",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:18:31",
+    "source": "playlist"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:19:13",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:19:13",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:19:13",
+    "source": "playlist"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:19:33",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:19:33",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:19:33",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:19:40",
+    "source": "playlist"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:19:40",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:19:40",
+    "source": "playlist"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:19:43",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:19:45",
+    "source": "playlist"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:19:45",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:19:45",
+    "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "played_at": "2026-04-17 16:19:47",
+    "source": "playlist"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "played_at": "2026-04-17 16:19:47",
+    "source": "playlist"
+  },
+  {
+    "track_key": "05",
+    "name": "Đạt Ngô",
+    "artist": "Alex Đạt",
+    "played_at": "2026-04-17 16:19:47",
+    "source": "playlist"
   }
 ]

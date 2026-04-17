@@ -4,7 +4,7 @@
     "name": "What a Wonderful World",
     "artist": "Louis Armstrong",
     "rating": 5,
-    "play_count": 10
+    "play_count": 22
   },
   "02": {
     "type": "AlbumTrack",
@@ -27,7 +27,7 @@
     "name": "Three Little Birds",
     "artist": "Bob Marley",
     "rating": 1,
-    "play_count": 8,
+    "play_count": 19,
     "album": "Exodus",
     "year": 1977
   },
@@ -36,7 +36,7 @@
     "name": "Đạt Ngô",
     "artist": "Alex Đạt",
     "rating": 4,
-    "play_count": 8,
+    "play_count": 19,
     "album": "Đánh đổi",
     "year": 2035
   },
