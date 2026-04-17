@@ -19,8 +19,9 @@ class TrackViewer:
         window.title("View Tracks")
         fonts.apply_theme(window)
 
-        window.columnconfigure(0, weight=3)
-        window.columnconfigure(1, weight=2)
+        # Cập nhật: Ép tỷ lệ 3:1 tuyệt đối để khung Library rộng ra nhiều nhất có thể
+        window.columnconfigure(0, weight=3, uniform="main_cols")
+        window.columnconfigure(1, weight=1, uniform="main_cols")
         window.rowconfigure(2, weight=1)
 
         # Header riêng để không bị chồng chữ
@@ -188,7 +189,8 @@ class TrackViewer:
         )
         self.title_lbl.grid(row=2, column=0, sticky="w", pady=(0, 10))
 
-        self.detail_text = tk.Text(detail_card, height=14, wrap="word")
+        # Cập nhật: Thêm width=1 để nó không chiếm không gian của cột trái
+        self.detail_text = tk.Text(detail_card, height=14, width=1, wrap="word")
         fonts.style_text_widget(self.detail_text)
         self.detail_text.grid(row=3, column=0, sticky="nsew")
 

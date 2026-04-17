@@ -16,8 +16,9 @@ class UpdateTracks:
         window.title("Update Tracks")
         fonts.apply_theme(window)
 
-        window.columnconfigure(0, weight=3)
-        window.columnconfigure(1, weight=2)
+        # Cập nhật: Đổi tỷ lệ chia cột từ 3:2 thành 2:1 để cột trái rộng hơn hẳn
+        window.columnconfigure(0, weight=2, uniform="main_cols")
+        window.columnconfigure(1, weight=1, uniform="main_cols")
         window.rowconfigure(2, weight=1)
 
         # Header riêng để tiêu đề không chồng lên mô tả
@@ -180,7 +181,8 @@ class UpdateTracks:
             style="CardTitle.TLabel"
         ).grid(row=0, column=0, sticky="w", pady=(0, 10))
 
-        self.track_txt = tk.Text(preview_card, height=24, wrap="word")
+        # Đã giới hạn chiều rộng bằng width=1
+        self.track_txt = tk.Text(preview_card, height=24, width=1, wrap="word")
         fonts.style_text_widget(self.track_txt)
         self.track_txt.grid(row=1, column=0, sticky="nsew")
 
