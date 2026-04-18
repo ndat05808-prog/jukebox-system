@@ -1,18 +1,10 @@
 {
-  "123": {
-    "username": "123",
-    "display_name": "123",
-    "salt": "2c38f1abdadab2bcb01454df478369ed",
-    "password_hash": "ec3516c48890a70ab3c791fba7c1f157f77acefafdb523a07fb2ccbc79546820",
-    "created_at": "2026-04-18 21:39:31",
-    "last_login": "2026-04-18 21:42:52"
-  },
   "td123": {
     "username": "td123",
     "display_name": "td123",
-    "salt": "5f4779358022fcb10c668551c2bd0b9c",
-    "password_hash": "e3d5762979321a654e3aacf6ac5c86151f02ba9f0513ffd04121cd5d682ca60b",
-    "created_at": "2026-04-18 22:10:43",
-    "last_login": "2026-04-18 22:22:02"
+    "salt": "100ce48072f2346170e7106013f42ae9",
+    "password_hash": "0ca1b94fe4e947755b885e827d7870be099b139a2d016769cab0494b82ede028",
+    "created_at": "2026-04-18 22:10:45",
+    "last_login": "2026-04-18 23:50:51"
   }
 }

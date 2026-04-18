@@ -1,12 +1,14 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from . import audio_manager
+from . import audio_player
 from . import cover_manager
 from . import font_manager as fonts
 from . import track_library as lib
 from .add_remove_tracks import AddRemoveTracks
 from .create_track_list import CreateTrackList
-from .gui_helpers import clear_tree, draw_bar_chart, stars_text
+from .gui_helpers import clear_tree, create_scrollable_column, draw_bar_chart, stars_text
 from .library_item import AlbumTrack
 from .track_statistics import TrackStatistics
 from .update_lyrics import UpdateLyrics
@@ -33,7 +35,11 @@ class JukeBoxApp:
         self.current_track_key: str | None = None
         self.selected_track_key: str | None = None
         self.is_playing = False
+        self.queue: list[str] = []
+        self.queue_index: int | None = None
         self.player_cover_image = None
+        self._progress_dragging = False
+        self._tick_job = None
         self._nav_buttons: dict[str, ttk.Button] = {}
         self._pages: dict[str, ttk.Frame] = {}
         self._active_page = "now_playing"
@@ -44,6 +50,7 @@ class JukeBoxApp:
         fonts.apply_theme(self.window)
 
         cover_manager.backfill_cover_paths()
+        audio_manager.backfill_audio_paths()
 
         self.window.columnconfigure(0, minsize=self.sidebar_width)
         self.window.columnconfigure(1, weight=1)
@@ -57,6 +64,11 @@ class JukeBoxApp:
         self._build_pages()
         self.switch_page("now_playing")
         self._refresh_player_bar()
+
+        audio_player.set_volume(self.volume.get() / 100.0)
+        self._update_volume_visuals(self.volume.get())
+        self.window.after(300, self._tick_progress)
+        self.window.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _configure_window_size(self):
         sw = self.window.winfo_screenwidth()
@@ -245,6 +257,8 @@ class JukeBoxApp:
             sliderlength=14,
         )
         self.progress.grid(row=0, column=1, sticky="ew", padx=8)
+        self.progress.bind("<ButtonPress-1>", self._on_progress_press)
+        self.progress.bind("<ButtonRelease-1>", self._on_progress_release)
 
         self.time_total_lbl = ttk.Label(
             progress,
@@ -258,9 +272,22 @@ class JukeBoxApp:
         right = ttk.Frame(bar, style="Panel.TFrame")
         right.grid(row=0, column=2, sticky="e")
 
-        ttk.Label(right, text="♫", background=fonts.PANEL, foreground=fonts.ACCENT_GLOW, font=fonts._ff(14)).grid(
-            row=0, column=0, padx=(0, 8)
+        self.volume_icon_lbl = ttk.Label(
+            right,
+            text="🔊",
+            background=fonts.PANEL,
+            foreground=fonts.ACCENT_GLOW,
+            font=fonts._ff(13),
         )
+        self.volume_icon_lbl.grid(row=0, column=0, padx=(0, 6))
+
+        ttk.Button(
+            right,
+            text="−",
+            style="IconButton.TButton",
+            command=self._volume_down,
+            width=2,
+        ).grid(row=0, column=1, padx=(0, 4))
 
         self.volume = tk.Scale(
             right,
@@ -274,11 +301,34 @@ class JukeBoxApp:
             bg=fonts.PANEL,
             fg=fonts.TEXT,
             activebackground=fonts.ACCENT,
-            sliderlength=12,
-            length=110,
+            sliderlength=14,
+            length=120,
         )
-        self.volume.grid(row=0, column=1)
+        self.volume.grid(row=0, column=2)
         self.volume.set(70)
+        self.volume.configure(command=self._on_volume_change)
+        self.volume.bind("<MouseWheel>", self._on_volume_wheel)
+        self.volume.bind("<Button-4>", lambda e: self._volume_up())
+        self.volume.bind("<Button-5>", lambda e: self._volume_down())
+
+        ttk.Button(
+            right,
+            text="+",
+            style="IconButton.TButton",
+            command=self._volume_up,
+            width=2,
+        ).grid(row=0, column=3, padx=(4, 6))
+
+        self.volume_pct_lbl = ttk.Label(
+            right,
+            text="70%",
+            background=fonts.PANEL,
+            foreground=fonts.MUTED,
+            font=fonts._ff(9, "bold"),
+            width=4,
+            anchor="e",
+        )
+        self.volume_pct_lbl.grid(row=0, column=4)
 
     # --- Page management ---
 
@@ -316,6 +366,25 @@ class JukeBoxApp:
             self.status(f"Track {track_key} does not exist.")
             return False
 
+        audio_path = audio_manager.find_audio_path(track_key)
+        if audio_path is None:
+            messagebox.showwarning(
+                "No audio file",
+                f"Track {track_key} does not have an audio file attached.",
+                parent=self.window,
+            )
+            return False
+
+        if not audio_player.load_and_play(audio_path):
+            messagebox.showerror(
+                "Playback failed",
+                f"Could not play audio file: {audio_path.name}",
+                parent=self.window,
+            )
+            return False
+
+        audio_player.set_volume(self.volume.get() / 100.0)
+
         if not lib.increment_play_count(track_key, auto_save=False):
             self.status(f"Track {track_key} could not be played.")
             return False
@@ -327,25 +396,51 @@ class JukeBoxApp:
         self.selected_track_key = track_key
         self.is_playing = True
 
-        self.progress.set(min(100, self.progress.get() + 12))
+        self.progress.set(0)
         self._refresh_player_bar()
         self._notify_pages_refresh()
+
+        if not (source.startswith("playlist") or source == "queue"):
+            self.clear_queue()
 
         self.status(f"Now playing: {lib.get_name(track_key)}")
         return True
 
+    def set_queue(self, keys: list[str], index: int = 0):
+        self.queue = list(keys)
+        if self.queue and 0 <= index < len(self.queue):
+            self.queue_index = index
+        else:
+            self.queue_index = None
+
+    def clear_queue(self):
+        self.queue = []
+        self.queue_index = None
+
     def toggle_play(self):
-        if self.current_track_key is None:
+        if self.current_track_key is None or not audio_player.is_loaded():
             records = lib.get_track_records()
             if records:
                 self.play_track(records[0]["key"])
             return
 
-        self.is_playing = not self.is_playing
+        if audio_player.is_paused():
+            audio_player.resume()
+            self.is_playing = True
+            self.status("Playing")
+        else:
+            audio_player.pause()
+            self.is_playing = False
+            self.status("Paused")
         self.play_btn.configure(text="⏸" if self.is_playing else "▶")
-        self.status("Playing" if self.is_playing else "Paused")
 
     def _player_previous(self):
+        if self.queue and self.queue_index is not None:
+            prev_idx = self.queue_index - 1
+            if prev_idx >= 0:
+                self.queue_index = prev_idx
+                self.play_track(self.queue[prev_idx], source="queue")
+                return
         records = lib.get_track_records()
         if not records:
             return
@@ -357,6 +452,12 @@ class JukeBoxApp:
         self.play_track(keys[(idx - 1) % len(keys)])
 
     def _player_next(self):
+        if self.queue and self.queue_index is not None:
+            next_idx = self.queue_index + 1
+            if next_idx < len(self.queue):
+                self.queue_index = next_idx
+                self.play_track(self.queue[next_idx], source="queue")
+                return
         records = lib.get_track_records()
         if not records:
             return
@@ -399,6 +500,90 @@ class JukeBoxApp:
         self.time_cur_lbl.configure(text="1:12")
         self.time_total_lbl.configure(text="3:24")
 
+    def _on_volume_change(self, value):
+        try:
+            pct = float(value)
+        except (TypeError, ValueError):
+            return
+        audio_player.set_volume(pct / 100.0)
+        self._update_volume_visuals(pct)
+
+    def _volume_up(self):
+        self.volume.set(min(100, int(self.volume.get()) + 5))
+
+    def _volume_down(self):
+        self.volume.set(max(0, int(self.volume.get()) - 5))
+
+    def _on_volume_wheel(self, event):
+        if event.delta > 0:
+            self._volume_up()
+        elif event.delta < 0:
+            self._volume_down()
+
+    def _update_volume_visuals(self, pct: float):
+        pct_int = max(0, min(100, int(round(pct))))
+        self.volume_pct_lbl.configure(text=f"{pct_int}%")
+        if pct_int == 0:
+            icon = "🔇"
+            colour = fonts.MUTED
+        elif pct_int < 34:
+            icon = "🔈"
+            colour = fonts.ACCENT_GLOW
+        elif pct_int < 67:
+            icon = "🔉"
+            colour = fonts.ACCENT_GLOW
+        else:
+            icon = "🔊"
+            colour = fonts.ACCENT_GLOW
+        self.volume_icon_lbl.configure(text=icon, foreground=colour)
+
+    def _on_progress_press(self, event=None):
+        self._progress_dragging = True
+
+    def _on_progress_release(self, event=None):
+        self._progress_dragging = False
+        duration = audio_player.get_duration_seconds()
+        if duration <= 0 or not audio_player.is_loaded():
+            return
+        target_seconds = (self.progress.get() / 100.0) * duration
+        audio_player.seek(target_seconds)
+
+    def _tick_progress(self):
+        try:
+            if audio_player.is_loaded():
+                duration = audio_player.get_duration_seconds()
+                position = audio_player.get_position_seconds()
+
+                if duration > 0 and not self._progress_dragging:
+                    ratio = max(0.0, min(100.0, (position / duration) * 100.0))
+                    self.progress.set(ratio)
+
+                self.time_cur_lbl.configure(text=self._format_time(position))
+                self.time_total_lbl.configure(text=self._format_time(duration))
+
+                if self.is_playing and not audio_player.is_playing() and not audio_player.is_paused():
+                    self.is_playing = False
+                    self.play_btn.configure(text="▶")
+        finally:
+            self._tick_job = self.window.after(300, self._tick_progress)
+
+    @staticmethod
+    def _format_time(seconds: float) -> str:
+        if seconds <= 0:
+            return "0:00"
+        total = int(seconds)
+        return f"{total // 60}:{total % 60:02d}"
+
+    def _on_close(self):
+        if self._tick_job is not None:
+            try:
+                self.window.after_cancel(self._tick_job)
+            except tk.TclError:
+                pass
+            self._tick_job = None
+        audio_player.stop()
+        self.window.destroy()
+
     def _draw_cover_placeholder(
         self, canvas: tk.Canvas, size: int, glyph: str, accent: bool = False
     ):
@@ -440,6 +625,14 @@ class JukeBoxApp:
         if not confirmed:
             return
 
+        if self._tick_job is not None:
+            try:
+                self.window.after_cancel(self._tick_job)
+            except tk.TclError:
+                pass
+            self._tick_job = None
+        audio_player.stop()
+
         self.window.destroy()
 
         if callable(self.on_logout):
@@ -462,20 +655,27 @@ class NowPlayingPage:
         self.cover_image = None
         self.frame = ttk.Frame(parent, style="Root.TFrame")
         self.frame.columnconfigure(0, weight=1)
-        self.frame.rowconfigure(1, weight=1)
+        self.frame.rowconfigure(0, weight=1)
         app.register_page("now_playing", self)
+
+        self._scroll_host = ttk.Frame(self.frame, style="Root.TFrame")
+        self._scroll_host.grid(row=0, column=0, sticky="nsew")
+        self._content = create_scrollable_column(self._scroll_host)
+        self._content.columnconfigure(0, weight=1)
+        self._content.columnconfigure(1, weight=1)
 
         self._is_stacked: bool | None = None
         self._build()
-        self.frame.bind("<Configure>", self._on_resize)
+        self._content.bind("<Configure>", self._on_resize)
         self.on_show()
 
     def _build(self):
-        self.frame.columnconfigure(0, weight=0)
-        self.frame.columnconfigure(1, weight=1)
-        self.frame.rowconfigure(1, weight=1)
+        container = self._content
+        container.columnconfigure(0, weight=0)
+        container.columnconfigure(1, weight=1)
+        container.rowconfigure(1, weight=1)
 
-        header = ttk.Frame(self.frame, style="Root.TFrame")
+        header = ttk.Frame(container, style="Root.TFrame")
         header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 18))
         header.columnconfigure(0, weight=1)
 
@@ -487,7 +687,7 @@ class NowPlayingPage:
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
 
         # ===== Left column: cover + meta =====
-        left = ttk.Frame(self.frame, style="Card.TFrame", padding=24)
+        left = ttk.Frame(container, style="Card.TFrame", padding=24)
         left.grid(row=1, column=0, sticky="nsew", padx=(0, 14))
         left.columnconfigure(0, weight=1)
         self.left_card = left
@@ -561,7 +761,7 @@ class NowPlayingPage:
         ).grid(row=0, column=0, sticky="ew")
 
         # ===== Right column: lyrics =====
-        right = ttk.Frame(self.frame, style="Card.TFrame", padding=24)
+        right = ttk.Frame(container, style="Card.TFrame", padding=24)
         right.grid(row=1, column=1, sticky="nsew")
         right.columnconfigure(0, weight=1)
         right.rowconfigure(2, weight=1)
@@ -619,9 +819,9 @@ class NowPlayingPage:
         )
 
     def _on_resize(self, event=None):
-        if event is not None and event.widget is not self.frame:
+        if event is not None and event.widget is not self._content:
             return
-        width = self.frame.winfo_width()
+        width = self._content.winfo_width()
         if width <= 1:
             return
 
@@ -630,15 +830,15 @@ class NowPlayingPage:
             if stacked:
                 self.left_card.grid_configure(row=1, column=0, columnspan=2, padx=0)
                 self.right_card.grid_configure(row=2, column=0, columnspan=2, padx=0, pady=(14, 0))
-                self.frame.rowconfigure(1, weight=0)
-                self.frame.rowconfigure(2, weight=1)
-                self.frame.columnconfigure(1, weight=0)
+                self._content.rowconfigure(1, weight=0)
+                self._content.rowconfigure(2, weight=1)
+                self._content.columnconfigure(1, weight=0)
             else:
                 self.left_card.grid_configure(row=1, column=0, columnspan=1, padx=(0, 14))
                 self.right_card.grid_configure(row=1, column=1, columnspan=1, padx=0, pady=0)
-                self.frame.rowconfigure(1, weight=1)
-                self.frame.rowconfigure(2, weight=0)
-                self.frame.columnconfigure(1, weight=1)
+                self._content.rowconfigure(1, weight=1)
+                self._content.rowconfigure(2, weight=0)
+                self._content.columnconfigure(1, weight=1)
             self._is_stacked = stacked
 
         left_w = max(220, self.left_card.winfo_width() - 60)
@@ -1036,6 +1236,7 @@ class PlaylistsPage:
         app.register_page("playlists", self)
 
         self.tool = CreateTrackList(self.frame)
+        self.tool.app_ref = self.app
 
     def on_library_change(self):
         if hasattr(self.tool, "list_tracks_clicked"):

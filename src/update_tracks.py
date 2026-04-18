@@ -2,10 +2,11 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+from . import audio_manager as audio
 from . import cover_manager as cover
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import bind_two_column_stacking, clear_tree, setup_page_container, stars_text
+from .gui_helpers import bind_two_column_stacking, clear_tree, create_scrollable_column, setup_page_container, stars_text
 from .library_item import AlbumTrack
 from .validation import get_valid_rating, get_valid_year, normalise_track_number
 
@@ -13,6 +14,13 @@ COVER_FILETYPES = [
     ("Image files", "*.png *.gif *.ppm *.pgm"),
     ("PNG", "*.png"),
     ("GIF", "*.gif"),
+    ("All files", "*.*"),
+]
+
+AUDIO_FILETYPES = [
+    ("Audio files", "*.mp3 *.wav *.ogg *.flac *.m4a *.aac"),
+    ("MP3", "*.mp3"),
+    ("WAV", "*.wav"),
     ("All files", "*.*"),
 ]
 
@@ -65,8 +73,14 @@ class UpdateTracks:
         right = ttk.Frame(self.window, style="Root.TFrame")
         right.grid(row=2, column=1, sticky="nsew", padx=(10, 18), pady=10)
         right.columnconfigure(0, weight=1)
+        right.rowconfigure(0, weight=1)
 
         bind_two_column_stacking(self.window, left, right, breakpoint=940)
+
+        form_host = ttk.Frame(right, style="Root.TFrame")
+        form_host.grid(row=0, column=0, sticky="nsew")
+        form_scroll = create_scrollable_column(form_host)
+        form_scroll.columnconfigure(0, weight=1)
 
         # ===== Load Track =====
         search_card = ttk.Frame(left, style="Card.TFrame", padding=18)
@@ -135,7 +149,7 @@ class UpdateTracks:
         self.tree.bind("<<TreeviewSelect>>", self._select_from_tree)
 
         # ===== Edit Form =====
-        form_card = ttk.Frame(right, style="Card.TFrame", padding=18)
+        form_card = ttk.Frame(form_scroll, style="Card.TFrame", padding=18)
         form_card.grid(row=0, column=0, sticky="ew")
         form_card.columnconfigure(0, weight=1)
         form_card.columnconfigure(1, weight=1)
@@ -199,8 +213,27 @@ class UpdateTracks:
         ttk.Button(cover_btns, text="Choose Image…", style="Ghost.TButton", command=self._choose_cover_clicked).grid(row=0, column=0, sticky="ew", padx=(0, 6))
         ttk.Button(cover_btns, text="Remove Cover", style="Ghost.TButton", command=self._clear_cover_clicked).grid(row=0, column=1, sticky="ew")
 
+        ttk.Label(form_card, text="Audio File", style="Card.TLabel").grid(row=9, column=0, columnspan=2, sticky="w", pady=(4, 6))
+
+        audio_row = ttk.Frame(form_card, style="Card.TFrame")
+        audio_row.grid(row=10, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+        audio_row.columnconfigure(0, weight=1)
+
+        self.audio_name_lbl = ttk.Label(audio_row, text="No audio assigned.", style="Muted.TLabel")
+        self.audio_name_lbl.grid(row=0, column=0, sticky="w")
+
+        audio_btns = ttk.Frame(audio_row, style="Card.TFrame")
+        audio_btns.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+        audio_btns.columnconfigure(0, weight=1)
+        audio_btns.columnconfigure(1, weight=1)
+
+        ttk.Button(audio_btns, text="Choose Audio…", style="Ghost.TButton", command=self._choose_audio_clicked).grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        ttk.Button(audio_btns, text="Remove Audio", style="Ghost.TButton", command=self._clear_audio_clicked).grid(row=0, column=1, sticky="ew")
+
         self.selected_cover_path: Path | None = None
         self.clear_cover_on_save = False
+        self.selected_audio_path: Path | None = None
+        self.clear_audio_on_save = False
         self._preview_image = None
 
         ttk.Button(
@@ -208,7 +241,7 @@ class UpdateTracks:
             text="Update Track",
             style="Neon.TButton",
             command=self.update_track_clicked
-        ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        ).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
 
     def list_tracks_clicked(self):
@@ -244,6 +277,9 @@ class UpdateTracks:
         self.selected_cover_path = None
         self.clear_cover_on_save = False
         self._render_cover_preview(None, "No cover assigned.")
+        self.selected_audio_path = None
+        self.clear_audio_on_save = False
+        self._render_audio_name(None, "No audio assigned.")
 
     def _render_cover_preview(self, path: Path | None, empty_text: str = "No image selected."):
         if path is None:
@@ -303,6 +339,37 @@ class UpdateTracks:
         self._render_cover_preview(None, "Cover will be removed on update.")
         self.status_lbl.configure(text="Cover will be removed when you update the track.")
 
+    def _render_audio_name(self, path: Path | None, empty_text: str = "No audio assigned."):
+        if path is None:
+            self.audio_name_lbl.configure(text=empty_text)
+        else:
+            self.audio_name_lbl.configure(text=path.name)
+
+    def _choose_audio_clicked(self):
+        initial = str(audio.AUDIO_DIR) if audio.AUDIO_DIR.exists() else str(Path.home())
+        selected = filedialog.askopenfilename(
+            parent=self.window,
+            title="Choose audio file",
+            initialdir=initial,
+            filetypes=AUDIO_FILETYPES,
+        )
+        if not selected:
+            return
+        path = Path(selected)
+        if path.suffix.lower() not in audio.SUPPORTED_EXTENSIONS:
+            self.status_lbl.configure(text="Unsupported audio format (use MP3, WAV, OGG, FLAC, M4A, or AAC).")
+            return
+        self.selected_audio_path = path
+        self.clear_audio_on_save = False
+        self._render_audio_name(path)
+        self.status_lbl.configure(text=f"Selected audio: {path.name} (will save on update).")
+
+    def _clear_audio_clicked(self):
+        self.selected_audio_path = None
+        self.clear_audio_on_save = True
+        self._render_audio_name(None, "Audio will be removed on update.")
+        self.status_lbl.configure(text="Audio will be removed when you update the track.")
+
     def load_track_clicked(self):
         track_key = normalise_track_number(self.track_input.get())
         if track_key is None:
@@ -335,6 +402,12 @@ class UpdateTracks:
             self.cover_name_lbl.configure(text=f"Current: {existing_cover.name}")
         else:
             self._render_cover_preview(None, "No cover assigned.")
+
+        existing_audio = audio.find_audio_path(track_key) if audio.has_audio(track_key) else None
+        if existing_audio is not None:
+            self.audio_name_lbl.configure(text=f"Current: {existing_audio.name}")
+        else:
+            self._render_audio_name(None, "No audio assigned.")
 
         self.status_lbl.configure(text=f"Track {track_key} loaded successfully.")
 
@@ -385,6 +458,16 @@ class UpdateTracks:
             self.clear_cover_on_save = False
             cover_status = " Cover removed."
 
+        audio_status = ""
+        if self.selected_audio_path is not None:
+            saved_audio = audio.assign_audio(track_key, self.selected_audio_path)
+            audio_status = " Audio saved." if saved_audio is not None else " (Audio could not be saved.)"
+            self.selected_audio_path = None
+        elif self.clear_audio_on_save:
+            audio.remove_audio(track_key)
+            self.clear_audio_on_save = False
+            audio_status = " Audio removed."
+
         existing_cover = cover.find_cover_path(track_key) if cover.has_custom_cover(track_key) else None
         if existing_cover is not None:
             self._render_cover_preview(existing_cover)
@@ -392,10 +475,16 @@ class UpdateTracks:
         else:
             self._render_cover_preview(None, "No cover assigned.")
 
+        existing_audio = audio.find_audio_path(track_key) if audio.has_audio(track_key) else None
+        if existing_audio is not None:
+            self.audio_name_lbl.configure(text=f"Current: {existing_audio.name}")
+        else:
+            self._render_audio_name(None, "No audio assigned.")
+
         self.list_tracks_clicked()
         self._notify_success(
             "Track updated",
-            f"Track {track_key}: '{name}' by {artist} was updated successfully.{cover_status}",
+            f"Track {track_key}: '{name}' by {artist} was updated successfully.{cover_status}{audio_status}",
         )
 
         if self.app_ref is not None:

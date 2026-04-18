@@ -199,6 +199,14 @@ def set_lyrics(key: str, lyrics: str | None) -> bool:
     return save_library()
 
 
+def set_audio_path(key: str, audio_path: str | None) -> bool:
+    item = library.get(key)
+    if item is None:
+        return False
+    item.audio_path = audio_path or None
+    return save_library()
+
+
 def all_keys() -> list[str]:
     numeric_keys = [key for key in library.keys() if key.isdigit()]
     non_numeric_keys = [key for key in library.keys() if not key.isdigit()]
@@ -278,11 +286,12 @@ def update_track_info(
     play_count = item.play_count
     cover_path = item.cover_path
     lyrics = item.lyrics
+    audio_path = item.audio_path
     should_be_album_track = isinstance(item, AlbumTrack) or album != "" or year is not None
     if should_be_album_track:
-        new_item = AlbumTrack(name, artist, rating, play_count, album, year, cover_path, lyrics)
+        new_item = AlbumTrack(name, artist, rating, play_count, album, year, cover_path, lyrics, audio_path)
     else:
-        new_item = LibraryItem(name, artist, rating, play_count, cover_path, lyrics)
+        new_item = LibraryItem(name, artist, rating, play_count, cover_path, lyrics, audio_path)
     library[key] = new_item
     if auto_save and not save_library():
         library[key] = old_item

@@ -2,16 +2,24 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+from . import audio_manager as audio
 from . import cover_manager as cover
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import bind_two_column_stacking, clear_tree, setup_page_container, stars_text
+from .gui_helpers import bind_two_column_stacking, clear_tree, create_scrollable_column, setup_page_container, stars_text
 from .validation import get_valid_rating, get_valid_year, normalise_track_number
 
 COVER_FILETYPES = [
     ("Image files", "*.png *.gif *.ppm *.pgm"),
     ("PNG", "*.png"),
     ("GIF", "*.gif"),
+    ("All files", "*.*"),
+]
+
+AUDIO_FILETYPES = [
+    ("Audio files", "*.mp3 *.wav *.ogg *.flac *.m4a *.aac"),
+    ("MP3", "*.mp3"),
+    ("WAV", "*.wav"),
     ("All files", "*.*"),
 ]
 
@@ -122,11 +130,13 @@ class AddRemoveTracks:
         self.tree.bind("<<TreeviewSelect>>", self._select_from_tree)
 
         # ===== Forms Column =====
-        forms_container = ttk.Frame(right, style="Root.TFrame")
-        forms_container.grid(row=0, column=0, sticky="nsew")
+        forms_host = ttk.Frame(right, style="Root.TFrame")
+        forms_host.grid(row=0, column=0, sticky="nsew")
+        forms_container = create_scrollable_column(forms_host)
         forms_container.columnconfigure(0, weight=1)
 
         self.selected_cover_path: Path | None = None
+        self.selected_audio_path: Path | None = None
         self._preview_image = None
 
         next_row = 0
@@ -200,12 +210,29 @@ class AddRemoveTracks:
         ttk.Button(cover_btns, text="Choose Image…", style="Ghost.TButton", command=self._choose_cover_clicked).grid(row=0, column=0, sticky="ew", padx=(0, 6))
         ttk.Button(cover_btns, text="Clear", style="Ghost.TButton", command=self._clear_cover_clicked).grid(row=0, column=1, sticky="ew")
 
+        ttk.Label(add_card, text="Audio File", style="Card.TLabel").grid(row=9, column=0, columnspan=2, sticky="w", pady=(4, 6))
+
+        audio_row = ttk.Frame(add_card, style="Card.TFrame")
+        audio_row.grid(row=10, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+        audio_row.columnconfigure(0, weight=1)
+
+        self.audio_name_lbl = ttk.Label(audio_row, text="No audio selected.", style="Muted.TLabel")
+        self.audio_name_lbl.grid(row=0, column=0, sticky="w")
+
+        audio_btns = ttk.Frame(audio_row, style="Card.TFrame")
+        audio_btns.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+        audio_btns.columnconfigure(0, weight=1)
+        audio_btns.columnconfigure(1, weight=1)
+
+        ttk.Button(audio_btns, text="Choose Audio…", style="Ghost.TButton", command=self._choose_audio_clicked).grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        ttk.Button(audio_btns, text="Clear", style="Ghost.TButton", command=self._clear_audio_clicked).grid(row=0, column=1, sticky="ew")
+
         ttk.Button(
             add_card,
             text="Add Track",
             style="Neon.TButton",
             command=self.add_track_clicked
-        ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        ).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
     def _build_delete_card(self, parent, row: int):
         delete_card = ttk.Frame(parent, style="Card.TFrame", padding=18)
@@ -309,6 +336,35 @@ class AddRemoveTracks:
         self._render_cover_preview(None)
         self.status_lbl.configure(text="Cover selection cleared.")
 
+    def _render_audio_name(self, path: Path | None):
+        if path is None:
+            self.audio_name_lbl.configure(text="No audio selected.")
+        else:
+            self.audio_name_lbl.configure(text=path.name)
+
+    def _choose_audio_clicked(self):
+        initial = str(audio.AUDIO_DIR) if audio.AUDIO_DIR.exists() else str(Path.home())
+        selected = filedialog.askopenfilename(
+            parent=self.window,
+            title="Choose audio file",
+            initialdir=initial,
+            filetypes=AUDIO_FILETYPES,
+        )
+        if not selected:
+            return
+        path = Path(selected)
+        if path.suffix.lower() not in audio.SUPPORTED_EXTENSIONS:
+            self.status_lbl.configure(text="Unsupported audio format (use MP3, WAV, OGG, FLAC, M4A, or AAC).")
+            return
+        self.selected_audio_path = path
+        self._render_audio_name(path)
+        self.status_lbl.configure(text=f"Selected audio: {path.name}")
+
+    def _clear_audio_clicked(self):
+        self.selected_audio_path = None
+        self._render_audio_name(None)
+        self.status_lbl.configure(text="Audio selection cleared.")
+
     def refresh_list(self):
         clear_tree(self.tree)
         for record in lib.get_track_records():
@@ -376,10 +432,15 @@ class AddRemoveTracks:
             saved = cover.assign_cover_image(key, self.selected_cover_path)
             cover_note = f" Cover saved ({saved.name})." if saved is not None else " (Cover could not be saved.)"
 
+        audio_note = ""
+        if self.selected_audio_path is not None:
+            saved_audio = audio.assign_audio(key, self.selected_audio_path)
+            audio_note = f" Audio saved ({saved_audio.name})." if saved_audio is not None else " (Audio could not be saved.)"
+
         self.refresh_list()
         self._notify_success(
             "Track created",
-            f"Added track {key}: '{name}' by {artist}.{cover_note}",
+            f"Added track {key}: '{name}' by {artist}.{cover_note}{audio_note}",
         )
 
         for widget in (self.name_input, self.artist_input, self.album_input, self.year_input):
@@ -387,6 +448,8 @@ class AddRemoveTracks:
         self.rating_input.set("0")
         self.selected_cover_path = None
         self._render_cover_preview(None)
+        self.selected_audio_path = None
+        self._render_audio_name(None)
 
         if self.app_ref is not None:
             self.app_ref.refresh_library()

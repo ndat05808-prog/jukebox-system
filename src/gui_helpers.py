@@ -108,6 +108,70 @@ def bind_two_column_stacking(
     return on_resize
 
 
+def create_scrollable_column(parent):
+    """Wrap a vertically scrollable inner frame inside ``parent``.
+
+    Returns the inner frame; caller should add content there. The ``parent`` is
+    reconfigured to host a Canvas + Scrollbar, so pass a dedicated container.
+    """
+    for child in parent.winfo_children():
+        child.destroy()
+
+    parent.columnconfigure(0, weight=1)
+    parent.columnconfigure(1, weight=0)
+    parent.rowconfigure(0, weight=1)
+
+    canvas = tk.Canvas(parent, borderwidth=0, highlightthickness=0, bg=fonts.BG)
+    scroll = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+    canvas.configure(yscrollcommand=scroll.set)
+    canvas.grid(row=0, column=0, sticky="nsew")
+    scroll.grid(row=0, column=1, sticky="ns")
+
+    inner = ttk.Frame(canvas, style="Root.TFrame")
+    window_id = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+    def _on_inner_configure(event=None):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+
+    def _on_canvas_configure(event=None):
+        canvas.itemconfigure(window_id, width=event.width if event else canvas.winfo_width())
+
+    def _on_mousewheel(event):
+        bbox = canvas.bbox("all")
+        if bbox is None:
+            return
+        content_h = bbox[3] - bbox[1]
+        if content_h <= canvas.winfo_height():
+            return
+        if event.num == 4:
+            delta = -1
+        elif event.num == 5:
+            delta = 1
+        else:
+            delta = int(-1 * (event.delta / 120)) if event.delta else 0
+        if delta:
+            canvas.yview_scroll(delta, "units")
+
+    def _bind_wheel(_event=None):
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        canvas.bind_all("<Button-4>", _on_mousewheel)
+        canvas.bind_all("<Button-5>", _on_mousewheel)
+
+    def _unbind_wheel(_event=None):
+        canvas.unbind_all("<MouseWheel>")
+        canvas.unbind_all("<Button-4>")
+        canvas.unbind_all("<Button-5>")
+
+    inner.bind("<Configure>", _on_inner_configure)
+    canvas.bind("<Configure>", _on_canvas_configure)
+    canvas.bind("<Enter>", _bind_wheel)
+    canvas.bind("<Leave>", _unbind_wheel)
+    inner.bind("<Enter>", _bind_wheel)
+    inner.bind("<Leave>", _unbind_wheel)
+
+    return inner
+
+
 def create_metric_card(parent, title: str, value: str, subtitle: str = ""):
     card = ttk.Frame(parent, style="Card.TFrame", padding=16)
     ttk.Label(card, text=title, style="CardTitle.TLabel").pack(anchor="w")

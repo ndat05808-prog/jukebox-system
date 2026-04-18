@@ -12,6 +12,7 @@ class LibraryItem:
         play_count: int = 0,
         cover_path: str | None = None,
         lyrics: str | None = None,
+        audio_path: str | None = None,
     ):
         self.name = name.strip()
         self.artist = artist.strip()
@@ -19,6 +20,7 @@ class LibraryItem:
         self.play_count = 0
         self.cover_path = cover_path or None
         self.lyrics = lyrics or None
+        self.audio_path = audio_path or None
         self.set_rating(rating)
         self.set_play_count(play_count)
 
@@ -73,6 +75,8 @@ class LibraryItem:
             data["cover_path"] = self.cover_path
         if self.lyrics:
             data["lyrics"] = self.lyrics
+        if self.audio_path:
+            data["audio_path"] = self.audio_path
         return data
 
     @classmethod
@@ -84,6 +88,7 @@ class LibraryItem:
             data.get("play_count", 0),
             data.get("cover_path"),
             data.get("lyrics"),
+            data.get("audio_path"),
         )
 
 
@@ -98,8 +103,9 @@ class AlbumTrack(LibraryItem):
         year: int | None = None,
         cover_path: str | None = None,
         lyrics: str | None = None,
+        audio_path: str | None = None,
     ):
-        super().__init__(name, artist, rating, play_count, cover_path, lyrics)
+        super().__init__(name, artist, rating, play_count, cover_path, lyrics, audio_path)
         self.album = album.strip()
         self.year = year
 
@@ -136,4 +142,5 @@ class AlbumTrack(LibraryItem):
             data.get("year"),
             data.get("cover_path"),
             data.get("lyrics"),
+            data.get("audio_path"),
         )

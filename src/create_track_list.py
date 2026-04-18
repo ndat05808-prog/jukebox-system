@@ -2,6 +2,8 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, simpledialog, ttk
 
+from . import audio_manager
+from . import audio_player
 from . import font_manager as fonts
 from . import track_library as lib
 from .gui_helpers import bind_two_column_stacking, clear_tree, setup_page_container, stars_text
@@ -15,10 +17,14 @@ PLAYLIST_DIR.mkdir(exist_ok=True)
 class CreateTrackList:
     def __init__(self, window):
         self.window = window
+        self.app_ref = None
         self.playlist: list[str] = []
         self.current_index = None
         self.is_playing = False
         self.is_paused = False
+        self._autoplay = False
+        self._was_playing_last_tick = False
+        self._tick_job = None
 
         setup_page_container(
             window,
@@ -57,88 +63,84 @@ class CreateTrackList:
         self.list_tracks_clicked()
         self.refresh_playlist_tree()
 
+        try:
+            self.window.protocol("WM_DELETE_WINDOW", self._on_close)
+        except AttributeError:
+            self.window.bind("<Destroy>", self._on_destroy, add="+")
+        self._tick_job = self.window.after(400, self._tick_playback)
+
     def _build_toolbar(self):
-        toolbar_card = ttk.Frame(self.window, style="Card.TFrame", padding=14)
-        toolbar_card.grid(row=1, column=0, columnspan=2, sticky="ew", padx=18, pady=10)
+        toolbar_card = ttk.Frame(self.window, style="Card.TFrame", padding=18)
+        toolbar_card.grid(row=1, column=0, columnspan=2, sticky="ew", padx=18, pady=(0, 10))
+        toolbar_card.columnconfigure(0, weight=2, uniform="tb")
+        toolbar_card.columnconfigure(1, weight=3, uniform="tb")
 
-        for i in range(6):
-            toolbar_card.columnconfigure(i, weight=1)
+        # ---- Add to Playlist section ----
+        add_section = ttk.Frame(toolbar_card, style="Card.TFrame")
+        add_section.grid(row=0, column=0, sticky="nsew", padx=(0, 18))
+        add_section.columnconfigure(1, weight=1)
 
-        # Row 0
-        ttk.Button(
-            toolbar_card,
-            text="List Tracks",
-            style="Ghost.TButton",
-            command=self.list_tracks_clicked
-        ).grid(row=0, column=0, sticky="ew", padx=(0, 8), pady=(0, 10))
+        ttk.Label(add_section, text="ADD TO PLAYLIST", style="Tag.TLabel").grid(
+            row=0, column=0, columnspan=3, sticky="w", pady=(0, 8)
+        )
 
-        self.input_txt = ttk.Entry(toolbar_card)
-        self.input_txt.grid(row=0, column=1, sticky="ew", padx=8, pady=(0, 10))
+        ttk.Label(add_section, text="Track #", style="Card.TLabel").grid(row=1, column=0, sticky="w", padx=(0, 8))
+
+        self.input_txt = ttk.Entry(add_section)
+        self.input_txt.grid(row=1, column=1, sticky="ew", padx=(0, 8))
         self.input_txt.bind("<Return>", lambda event: self.add_track_clicked())
 
         ttk.Button(
-            toolbar_card,
+            add_section,
             text="Add Track",
             style="Neon.TButton",
-            command=self.add_track_clicked
-        ).grid(row=0, column=2, sticky="ew", padx=8, pady=(0, 10))
+            command=self.add_track_clicked,
+        ).grid(row=1, column=2, sticky="ew")
 
-        self.remove_input = ttk.Entry(toolbar_card)
-        self.remove_input.grid(row=0, column=3, sticky="ew", padx=8, pady=(0, 10))
-        self.remove_input.bind("<Return>", lambda event: self.remove_track_clicked())
+        ttk.Label(
+            add_section,
+            text="Tip: double-click a library row to add it instantly.",
+            style="Muted.TLabel",
+            font=fonts._ff(9),
+        ).grid(row=2, column=0, columnspan=3, sticky="w", pady=(8, 0))
 
-        ttk.Button(
-            toolbar_card,
-            text="Remove",
-            style="Danger.TButton",
-            command=self.remove_track_clicked
-        ).grid(row=0, column=4, sticky="ew", padx=8, pady=(0, 10))
+        # ---- Playback section ----
+        play_section = ttk.Frame(toolbar_card, style="Card.TFrame")
+        play_section.grid(row=0, column=1, sticky="nsew")
+        for i in range(4):
+            play_section.columnconfigure(i, weight=1, uniform="play")
 
-        self.move_input = ttk.Entry(toolbar_card)
-        self.move_input.grid(row=0, column=5, sticky="ew", padx=(8, 0), pady=(0, 10))
-
-        # Row 1
-        ttk.Button(
-            toolbar_card,
-            text="Move Up",
-            style="Ghost.TButton",
-            command=self.move_up_clicked
-        ).grid(row=1, column=0, sticky="ew", padx=(0, 8))
+        ttk.Label(play_section, text="PLAYBACK", style="Tag.TLabel").grid(
+            row=0, column=0, columnspan=4, sticky="w", pady=(0, 8)
+        )
 
         ttk.Button(
-            toolbar_card,
-            text="Move Down",
-            style="Ghost.TButton",
-            command=self.move_down_clicked
-        ).grid(row=1, column=1, sticky="ew", padx=8)
-
-        ttk.Button(
-            toolbar_card,
-            text="Play All",
+            play_section,
+            text="▶  Play All",
             style="Neon.TButton",
-            command=self.play_playlist_clicked
-        ).grid(row=1, column=2, sticky="ew", padx=8)
+            command=self.play_playlist_clicked,
+        ).grid(row=1, column=0, sticky="ew", padx=(0, 6))
 
         ttk.Button(
-            toolbar_card,
+            play_section,
             text="Load Current",
             style="Ghost.TButton",
-            command=self.load_current_track_clicked
-        ).grid(row=1, column=3, sticky="ew", padx=8)
+            command=self.load_current_track_clicked,
+        ).grid(row=1, column=1, sticky="ew", padx=(0, 6))
 
         ttk.Button(
-            toolbar_card,
+            play_section,
             text="Pause / Resume",
             style="Ghost.TButton",
-            command=self.pause_resume_clicked
-        ).grid(row=1, column=4, sticky="ew", padx=8)
+            command=self.pause_resume_clicked,
+        ).grid(row=1, column=2, sticky="ew", padx=(0, 6))
 
         ttk.Button(
-            toolbar_card,
-            text="Skip",
+            play_section,
+            text="⏭  Skip",
             style="Ghost.TButton",
-            command=self.skip_track_clicked
-        ).grid(row=1, column=5, sticky="ew", padx=(8, 0))
+            command=self.skip_track_clicked,
+        ).grid(row=1, column=3, sticky="ew")
 
     def _build_main_panels(self):
         left = ttk.Frame(self.window, style="Root.TFrame")
@@ -222,6 +224,45 @@ class CreateTrackList:
         playlist_wrap.columnconfigure(0, weight=1)
         playlist_wrap.rowconfigure(0, weight=1)
 
+        # Action bar under the tree: position + remove / move buttons
+        action_bar = ttk.Frame(playlist_card, style="Card.TFrame")
+        action_bar.grid(row=2, column=0, sticky="ew", pady=(12, 0))
+        action_bar.columnconfigure(1, weight=1)
+        for col in range(2, 5):
+            action_bar.columnconfigure(col, weight=1, uniform="pl_actions")
+
+        ttk.Label(action_bar, text="Position", style="Card.TLabel").grid(
+            row=0, column=0, sticky="w", padx=(0, 8)
+        )
+
+        self.position_input = ttk.Entry(action_bar, width=6)
+        self.position_input.grid(row=0, column=1, sticky="ew", padx=(0, 10))
+
+        # Aliases keep existing handlers working unchanged
+        self.remove_input = self.position_input
+        self.move_input = self.position_input
+
+        ttk.Button(
+            action_bar,
+            text="Remove",
+            style="Danger.TButton",
+            command=self.remove_track_clicked,
+        ).grid(row=0, column=2, sticky="ew", padx=(0, 6))
+
+        ttk.Button(
+            action_bar,
+            text="Move Up",
+            style="Ghost.TButton",
+            command=self.move_up_clicked,
+        ).grid(row=0, column=3, sticky="ew", padx=(0, 6))
+
+        ttk.Button(
+            action_bar,
+            text="Move Down",
+            style="Ghost.TButton",
+            command=self.move_down_clicked,
+        ).grid(row=0, column=4, sticky="ew")
+
         self.playlist_tree = ttk.Treeview(
             playlist_wrap,
             columns=("position", "track", "title", "state"),
@@ -253,67 +294,60 @@ class CreateTrackList:
         # Playlist files card
         controls_card = ttk.Frame(right, style="Card.TFrame", padding=18)
         controls_card.grid(row=1, column=0, sticky="ew", pady=(14, 0))
-        for i in range(5):
-            controls_card.columnconfigure(i, weight=1)
+        for i in range(2):
+            controls_card.columnconfigure(i, weight=1, uniform="pl_files")
 
         ttk.Label(
             controls_card,
             text="Playlist Files",
             style="CardTitle.TLabel"
-        ).grid(row=0, column=0, columnspan=5, sticky="w", pady=(0, 10))
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
 
-        self.playlist_name_input = ttk.Entry(controls_card)
-        self.playlist_name_input.grid(row=1, column=0, columnspan=2, sticky="ew", padx=(0, 8))
-        self.playlist_name_input.insert(0, "my_playlist")
+        ttk.Label(
+            controls_card,
+            text="Playlist name",
+            style="CardMuted.TLabel",
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 4))
+
+        self.playlist_name_input = ttk.Combobox(controls_card, values=self._list_playlist_names())
+        self.playlist_name_input.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        self.playlist_name_input.set("")
+        self.playlist_name_input.bind("<<ComboboxSelected>>", self._on_playlist_picked)
 
         ttk.Button(
             controls_card,
             text="Save",
             style="Neon.TButton",
-            command=self.save_playlist_clicked
-        ).grid(row=1, column=2, padx=8, sticky="ew")
-
-        ttk.Button(
-            controls_card,
-            text="Load",
-            style="Ghost.TButton",
-            command=self.load_playlist_clicked
-        ).grid(row=1, column=3, padx=8, sticky="ew")
-
-        ttk.Button(
-            controls_card,
-            text="List",
-            style="Ghost.TButton",
-            command=self.list_playlists_clicked
-        ).grid(row=1, column=4, sticky="ew")
+            command=self.save_playlist_clicked,
+        ).grid(row=3, column=0, sticky="ew", padx=(0, 6), pady=(0, 8))
 
         ttk.Button(
             controls_card,
             text="Rename",
             style="Ghost.TButton",
-            command=self.rename_playlist_clicked
-        ).grid(row=2, column=0, pady=(10, 0), sticky="ew")
+            command=self.rename_playlist_clicked,
+        ).grid(row=3, column=1, sticky="ew", padx=(6, 0), pady=(0, 8))
 
         ttk.Button(
             controls_card,
             text="Create New",
             style="Ghost.TButton",
-            command=self.create_new_playlist_clicked
-        ).grid(row=2, column=1, pady=(10, 0), padx=8, sticky="ew")
+            command=self.create_new_playlist_clicked,
+        ).grid(row=4, column=0, sticky="ew", padx=(0, 6), pady=(0, 8))
 
         ttk.Button(
             controls_card,
             text="Reset",
             style="Danger.TButton",
-            command=self.reset_playlist_clicked
-        ).grid(row=2, column=2, pady=(10, 0), sticky="ew")
+            command=self.reset_playlist_clicked,
+        ).grid(row=4, column=1, sticky="ew", padx=(6, 0), pady=(0, 8))
 
         ttk.Button(
             controls_card,
             text="Delete File",
             style="Danger.TButton",
-            command=self.delete_playlist_clicked
-        ).grid(row=2, column=3, columnspan=2, pady=(10, 0), padx=(8, 0), sticky="ew")
+            command=self.delete_playlist_clicked,
+        ).grid(row=5, column=0, columnspan=2, sticky="ew")
 
     def _double_click_library(self, event=None):
         selected = self.library_tree.selection()
@@ -329,15 +363,90 @@ class CreateTrackList:
         if not selected:
             return
         values = self.playlist_tree.item(selected[0], "values")
-        self.remove_input.delete(0, tk.END)
-        self.remove_input.insert(0, values[0])
-        self.move_input.delete(0, tk.END)
-        self.move_input.insert(0, values[0])
+        self.position_input.delete(0, tk.END)
+        self.position_input.insert(0, values[0])
 
     def _reset_playback_state(self):
         self.current_index = None
         self.is_playing = False
         self.is_paused = False
+        self._autoplay = False
+        self._was_playing_last_tick = False
+
+    def _tick_playback(self):
+        try:
+            if (
+                self.app_ref is not None
+                and self.app_ref.queue == self.playlist
+                and self.app_ref.queue_index is not None
+                and self.app_ref.queue_index != self.current_index
+            ):
+                self.current_index = self.app_ref.queue_index
+                self.is_playing = self.app_ref.is_playing
+                self.is_paused = False
+                self._autoplay = True
+                self._was_playing_last_tick = audio_player.is_playing()
+                self.refresh_playlist_tree()
+                track_key = self.playlist[self.current_index]
+                track_name = lib.get_name(track_key) or "Unknown Track"
+                self.status_lbl.configure(
+                    text=f"Now playing: '{track_name}' (track {track_key})."
+                )
+
+            if self.is_playing and not audio_player.is_paused():
+                if self._was_playing_last_tick and not audio_player.is_playing():
+                    self._on_track_finished()
+                self._was_playing_last_tick = audio_player.is_playing()
+        except tk.TclError:
+            self._tick_job = None
+            return
+        try:
+            self._tick_job = self.window.after(400, self._tick_playback)
+        except tk.TclError:
+            self._tick_job = None
+
+    def _on_track_finished(self):
+        if not self._autoplay or self.current_index is None or len(self.playlist) == 0:
+            self.is_playing = False
+            self.is_paused = False
+            self._was_playing_last_tick = False
+            self.refresh_playlist_tree()
+            self.status_lbl.configure(text="Track finished.")
+            return
+
+        next_index = self.current_index + 1
+        if next_index >= len(self.playlist):
+            self.is_playing = False
+            self.is_paused = False
+            self._autoplay = False
+            self._was_playing_last_tick = False
+            self.refresh_playlist_tree()
+            self.status_lbl.configure(text="Playlist finished.")
+            return
+
+        self.current_index = next_index
+        self._play_current_track(source="playlist_auto")
+
+    def _on_close(self):
+        self._stop_tick_and_audio()
+        self.window.destroy()
+
+    def _on_destroy(self, event=None):
+        if event is not None and event.widget is not self.window:
+            return
+        self._stop_tick_and_audio()
+
+    def _stop_tick_and_audio(self):
+        if self._tick_job is not None:
+            try:
+                self.window.after_cancel(self._tick_job)
+            except Exception:
+                pass
+            self._tick_job = None
+        try:
+            audio_player.stop()
+        except Exception:
+            pass
 
     def _remove_missing_tracks(self, show_status=False):
         removed_keys = []
@@ -373,18 +482,46 @@ class CreateTrackList:
         track_key = self.playlist[self.current_index]
         track_name = lib.get_name(track_key) or "Unknown Track"
 
-        if not lib.increment_play_count(track_key, auto_save=False):
-            self.status_lbl.configure(text=f"Track {track_key} could not be played.")
-            return False
+        if self.app_ref is not None:
+            self.app_ref.set_queue(self.playlist, self.current_index)
+            ok = self.app_ref.play_track(track_key, source=source)
+        else:
+            ok = self._play_track_standalone(track_key, source=source)
 
-        lib.add_history_entry(track_key, source=source)
-        lib.save_library()
+        if not ok:
+            self.is_playing = False
+            self.is_paused = False
+            self._was_playing_last_tick = False
+            self.refresh_playlist_tree()
+            return False
 
         self.is_playing = True
         self.is_paused = False
+        self._was_playing_last_tick = True
         self.refresh_playlist_tree()
         self.list_tracks_clicked()
         self.status_lbl.configure(text=f"Now playing: '{track_name}' (track {track_key}).")
+        return True
+
+    def _play_track_standalone(self, track_key, source):
+        audio_path = audio_manager.find_audio_path(track_key)
+        if audio_path is None:
+            messagebox.showwarning(
+                "No audio attached",
+                f"Track {track_key} has no audio file attached.",
+                parent=self.window,
+            )
+            return False
+        if not audio_player.load_and_play(audio_path):
+            messagebox.showerror(
+                "Playback failed",
+                f"Could not play track {track_key}.",
+                parent=self.window,
+            )
+            return False
+        if lib.increment_play_count(track_key, auto_save=False):
+            lib.add_history_entry(track_key, source=source)
+            lib.save_library()
         return True
 
     def list_tracks_clicked(self):
@@ -457,13 +594,16 @@ class CreateTrackList:
         removed_name = lib.get_name(removed_key) or "Unknown Track"
 
         if len(self.playlist) == 0:
+            audio_player.stop()
             self._reset_playback_state()
         elif self.current_index is not None:
             if removed_index < self.current_index:
                 self.current_index -= 1
             elif removed_index == self.current_index:
+                audio_player.stop()
                 self.is_playing = False
                 self.is_paused = False
+                self._was_playing_last_tick = False
                 if self.current_index >= len(self.playlist):
                     self.current_index = len(self.playlist) - 1
 
@@ -530,41 +670,18 @@ class CreateTrackList:
         if self.current_index is None or self.current_index < 0 or self.current_index >= len(self.playlist):
             self.current_index = 0
 
-        track_key = self.playlist[self.current_index]
-        track_name = lib.get_name(track_key) or "Unknown Track"
-
-        self.is_playing = False
-        self.is_paused = False
-        self.refresh_playlist_tree()
-        self.status_lbl.configure(text=f"Loaded track {track_key}: '{track_name}'.")
+        self._autoplay = False
+        self._play_current_track(source="playlist_load")
 
     def play_playlist_clicked(self):
-        removed_keys = self._remove_missing_tracks(show_status=False)
+        self._remove_missing_tracks(show_status=False)
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
             return
 
-        played_count = 0
-        for track_key in self.playlist:
-            if lib.increment_play_count(track_key, auto_save=False):
-                lib.add_history_entry(track_key, source="playlist")
-                played_count += 1
-
-        lib.save_library()
-        self.current_index = 0 if self.playlist else None
-        self.is_playing = False
-        self.is_paused = False
-        self.list_tracks_clicked()
-        self.refresh_playlist_tree()
-
-        if removed_keys:
-            self.status_lbl.configure(
-                text=f"Played {played_count} valid track(s). Removed {len(removed_keys)} missing track(s)."
-            )
-        else:
-            self.status_lbl.configure(
-                text=f"Playlist played successfully. Play count increased for {played_count} track(s)."
-            )
+        self.current_index = 0
+        self._autoplay = True
+        self._play_current_track(source="playlist")
 
     def pause_resume_clicked(self):
         self._remove_missing_tracks(show_status=False)
@@ -580,13 +697,23 @@ class CreateTrackList:
         track_name = lib.get_name(track_key) or "Unknown Track"
 
         if self.is_playing:
+            if self.app_ref is not None:
+                self.app_ref.toggle_play()
+            else:
+                audio_player.pause()
             self.is_playing = False
             self.is_paused = True
+            self._was_playing_last_tick = False
             self.refresh_playlist_tree()
             self.status_lbl.configure(text=f"Paused '{track_name}'.")
         elif self.is_paused:
+            if self.app_ref is not None:
+                self.app_ref.toggle_play()
+            else:
+                audio_player.resume()
             self.is_playing = True
             self.is_paused = False
+            self._was_playing_last_tick = True
             self.refresh_playlist_tree()
             self.status_lbl.configure(text=f"Resumed '{track_name}'.")
         else:
@@ -619,6 +746,7 @@ class CreateTrackList:
             self.status_lbl.configure(text="Reset playlist cancelled.")
             return
 
+        audio_player.stop()
         self.playlist.clear()
         self._reset_playback_state()
         clear_tree(self.playlist_tree)
@@ -629,6 +757,16 @@ class CreateTrackList:
         if playlist_name is None:
             return None
         return PLAYLIST_DIR / f"{playlist_name}.txt"
+
+    def _list_playlist_names(self):
+        return sorted(path.stem for path in PLAYLIST_DIR.glob("*.txt"))
+
+    def _refresh_playlist_choices(self):
+        self.playlist_name_input.configure(values=self._list_playlist_names())
+
+    def _on_playlist_picked(self, event=None):
+        if self.playlist_name_input.get().strip():
+            self.load_playlist_clicked()
 
     def create_new_playlist_clicked(self):
         new_name_text = simpledialog.askstring(
@@ -650,11 +788,11 @@ class CreateTrackList:
             self.status_lbl.configure(text="A playlist with that name already exists.")
             return
 
+        audio_player.stop()
         self.playlist.clear()
         self._reset_playback_state()
         clear_tree(self.playlist_tree)
-        self.playlist_name_input.delete(0, tk.END)
-        self.playlist_name_input.insert(0, new_name)
+        self.playlist_name_input.set(new_name)
 
         try:
             new_path.write_text("", encoding="utf-8")
@@ -662,6 +800,7 @@ class CreateTrackList:
             self.status_lbl.configure(text="Could not create the new playlist file.")
             return
 
+        self._refresh_playlist_choices()
         self.status_lbl.configure(text=f"Created new playlist '{new_name}'.")
 
     def save_playlist_clicked(self):
@@ -681,6 +820,7 @@ class CreateTrackList:
             self.status_lbl.configure(text="Could not save the playlist file.")
             return
 
+        self._refresh_playlist_choices()
         self.status_lbl.configure(text=f"Playlist saved to {path.stem}.")
 
     def load_playlist_clicked(self):
@@ -707,6 +847,7 @@ class CreateTrackList:
             else:
                 skipped_count += 1
 
+        audio_player.stop()
         self.playlist = loaded_playlist
         self._reset_playback_state()
         self.refresh_playlist_tree()
@@ -757,18 +898,14 @@ class CreateTrackList:
             self.status_lbl.configure(text="Could not rename the playlist file.")
             return
 
-        self.playlist_name_input.delete(0, tk.END)
-        self.playlist_name_input.insert(0, new_name)
+        self.playlist_name_input.set(new_name)
+        self._refresh_playlist_choices()
         self.status_lbl.configure(text=f"Renamed playlist to {new_name}.")
-
-    def list_playlists_clicked(self):
-        playlist_files = sorted(path.stem for path in PLAYLIST_DIR.glob("*.txt"))
-        if len(playlist_files) == 0:
-            self.status_lbl.configure(text="No saved playlists were found.")
-            return
-
-        messagebox.showinfo("Saved Playlists", "\n".join(playlist_files), parent=self.window)
-        self.status_lbl.configure(text=f"Found {len(playlist_files)} saved playlist(s).")
+        messagebox.showinfo(
+            "Playlist renamed",
+            f"Renamed to '{new_name}'.",
+            parent=self.window,
+        )
 
     def delete_playlist_clicked(self):
         path = self._get_playlist_path()
@@ -795,7 +932,16 @@ class CreateTrackList:
             self.status_lbl.configure(text="Could not delete the playlist file.")
             return
 
-        self.status_lbl.configure(text=f"Deleted playlist file {path.stem}.")
+        deleted_name = path.stem
+        remaining = self._list_playlist_names()
+        self.playlist_name_input.configure(values=remaining)
+        self.playlist_name_input.set(remaining[0] if remaining else "")
+        self.status_lbl.configure(text=f"Deleted playlist file {deleted_name}.")
+        messagebox.showinfo(
+            "Playlist deleted",
+            f"Deleted '{deleted_name}'.",
+            parent=self.window,
+        )
 
 
 if __name__ == "__main__":

@@ -57,14 +57,19 @@ class UpdateLyrics:
 
         search_card = ttk.Frame(left, style="Card.TFrame", padding=18)
         search_card.grid(row=0, column=0, sticky="ew")
-        search_card.columnconfigure(1, weight=1)
-
-        ttk.Label(search_card, text="⌕", style="CardTitle.TLabel").grid(row=0, column=0, padx=(4, 10))
+        search_card.columnconfigure(0, weight=1)
 
         self.search_input = ttk.Entry(search_card)
-        self.search_input.grid(row=0, column=1, sticky="ew", padx=(0, 10))
+        self.search_input.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         self.search_input.bind("<KeyRelease>", lambda event: self._apply_search())
         self.search_input.bind("<Return>", lambda event: self._apply_search())
+
+        ttk.Button(
+            search_card,
+            text="Tìm kiếm",
+            style="Neon.TButton",
+            command=self._apply_search,
+        ).grid(row=0, column=1, sticky="ew", padx=(0, 6))
 
         ttk.Button(
             search_card,
