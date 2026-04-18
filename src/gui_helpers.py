@@ -40,6 +40,74 @@ def clear_tree(tree: ttk.Treeview):
         tree.delete(item_id)
 
 
+def bind_two_column_stacking(
+    container,
+    left,
+    right,
+    *,
+    breakpoint: int = 900,
+    left_weight: int = 2,
+    right_weight: int = 1,
+    side_row: int = 2,
+    stacked_right_row: int | None = None,
+    side_padx_left: tuple = (18, 10),
+    side_padx_right: tuple = (10, 18),
+    stacked_padx: tuple = (18, 18),
+    pady: int = 10,
+):
+    """Toggle a two-column layout between side-by-side and stacked based on container width.
+
+    `left` and `right` are the two frames currently gridded at (side_row, 0) / (side_row, 1).
+    When the container is narrower than `breakpoint`, `right` is moved below `left`
+    (spanning both columns). Safe to call on ttk widgets managed by grid.
+    """
+    if stacked_right_row is None:
+        stacked_right_row = side_row + 1
+
+    state = {"stacked": None}
+    uniform_token = f"__stack_{id(container)}"
+
+    def on_resize(event=None):
+        if event is not None and event.widget is not container:
+            return
+        width = container.winfo_width()
+        if width <= 1:
+            return
+        stacked = width < breakpoint
+        if stacked == state["stacked"]:
+            return
+        if stacked:
+            container.columnconfigure(0, weight=1, uniform="")
+            container.columnconfigure(1, weight=0, uniform="")
+            left.grid_configure(
+                row=side_row, column=0, columnspan=2,
+                padx=stacked_padx, pady=pady, sticky="nsew",
+            )
+            right.grid_configure(
+                row=stacked_right_row, column=0, columnspan=2,
+                padx=stacked_padx, pady=(0, pady), sticky="nsew",
+            )
+            container.rowconfigure(side_row, weight=1)
+            container.rowconfigure(stacked_right_row, weight=1)
+        else:
+            container.columnconfigure(0, weight=left_weight, uniform=uniform_token)
+            container.columnconfigure(1, weight=right_weight, uniform=uniform_token)
+            left.grid_configure(
+                row=side_row, column=0, columnspan=1,
+                padx=side_padx_left, pady=pady, sticky="nsew",
+            )
+            right.grid_configure(
+                row=side_row, column=1, columnspan=1,
+                padx=side_padx_right, pady=pady, sticky="nsew",
+            )
+            container.rowconfigure(side_row, weight=1)
+            container.rowconfigure(stacked_right_row, weight=0)
+        state["stacked"] = stacked
+
+    container.bind("<Configure>", on_resize)
+    return on_resize
+
+
 def create_metric_card(parent, title: str, value: str, subtitle: str = ""):
     card = ttk.Frame(parent, style="Card.TFrame", padding=16)
     ttk.Label(card, text=title, style="CardTitle.TLabel").pack(anchor="w")

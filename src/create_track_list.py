@@ -4,7 +4,7 @@ from tkinter import messagebox, simpledialog, ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import clear_tree, setup_page_container, stars_text
+from .gui_helpers import bind_two_column_stacking, clear_tree, setup_page_container, stars_text
 from .validation import get_valid_position, normalise_playlist_name, normalise_track_number
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
@@ -151,6 +151,11 @@ class CreateTrackList:
         right.columnconfigure(0, weight=1)
         right.rowconfigure(0, weight=1)
         right.rowconfigure(1, weight=0)
+
+        bind_two_column_stacking(
+            self.window, left, right,
+            breakpoint=960, left_weight=3, right_weight=2,
+        )
 
         # Library card
         library_card = ttk.Frame(left, style="Card.TFrame", padding=18)

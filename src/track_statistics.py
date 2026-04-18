@@ -3,7 +3,7 @@ from tkinter import messagebox, ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import create_metric_card, draw_bar_chart, set_text, setup_page_container
+from .gui_helpers import bind_two_column_stacking, create_metric_card, draw_bar_chart, set_text, setup_page_container
 
 
 class TrackStatistics:
@@ -115,6 +115,11 @@ class TrackStatistics:
         right_content.grid(row=3, column=1, sticky="nsew", padx=(10, 18), pady=10)
         right_content.columnconfigure(0, weight=1)
         right_content.rowconfigure(0, weight=1)
+
+        bind_two_column_stacking(
+            window, left_content, right_content,
+            breakpoint=1020, left_weight=2, right_weight=1, side_row=3,
+        )
 
         # Most Played Tracks card
         chart_card = ttk.Frame(left_content, style="Card.TFrame", padding=18)

@@ -5,7 +5,7 @@ from tkinter import filedialog, messagebox, ttk
 from . import cover_manager as cover
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import clear_tree, setup_page_container, stars_text
+from .gui_helpers import bind_two_column_stacking, clear_tree, setup_page_container, stars_text
 from .validation import get_valid_rating, get_valid_year, normalise_track_number
 
 COVER_FILETYPES = [
@@ -76,6 +76,8 @@ class AddRemoveTracks:
         right.grid(row=2, column=1, sticky="nsew", padx=(10, 18), pady=10)
         right.columnconfigure(0, weight=1)
         right.rowconfigure(0, weight=1)
+
+        bind_two_column_stacking(self.window, left, right, breakpoint=900)
 
         # ===== Library Table =====
         table_card = ttk.Frame(left, style="Card.TFrame", padding=18)

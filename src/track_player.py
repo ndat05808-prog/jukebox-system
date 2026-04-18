@@ -455,6 +455,8 @@ class JukeBoxApp:
 
 
 class NowPlayingPage:
+    STACK_BREAKPOINT = 980
+
     def __init__(self, parent, app: JukeBoxApp):
         self.app = app
         self.cover_image = None
@@ -463,7 +465,9 @@ class NowPlayingPage:
         self.frame.rowconfigure(1, weight=1)
         app.register_page("now_playing", self)
 
+        self._is_stacked: bool | None = None
         self._build()
+        self.frame.bind("<Configure>", self._on_resize)
         self.on_show()
 
     def _build(self):
@@ -486,6 +490,7 @@ class NowPlayingPage:
         left = ttk.Frame(self.frame, style="Card.TFrame", padding=24)
         left.grid(row=1, column=0, sticky="nsew", padx=(0, 14))
         left.columnconfigure(0, weight=1)
+        self.left_card = left
 
         self.tag_lbl = ttk.Label(left, text="◈  NOW PLAYING", style="Tag.TLabel")
         self.tag_lbl.grid(row=0, column=0, sticky="w", pady=(0, 14))
@@ -560,6 +565,7 @@ class NowPlayingPage:
         right.grid(row=1, column=1, sticky="nsew")
         right.columnconfigure(0, weight=1)
         right.rowconfigure(2, weight=1)
+        self.right_card = right
 
         ttk.Label(right, text="LYRICS", style="Tag.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 10))
 
@@ -611,6 +617,35 @@ class NowPlayingPage:
             state="disabled",
             fg=fonts.MUTED if placeholder else fonts.TEXT_SOFT,
         )
+
+    def _on_resize(self, event=None):
+        if event is not None and event.widget is not self.frame:
+            return
+        width = self.frame.winfo_width()
+        if width <= 1:
+            return
+
+        stacked = width < self.STACK_BREAKPOINT
+        if stacked != self._is_stacked:
+            if stacked:
+                self.left_card.grid_configure(row=1, column=0, columnspan=2, padx=0)
+                self.right_card.grid_configure(row=2, column=0, columnspan=2, padx=0, pady=(14, 0))
+                self.frame.rowconfigure(1, weight=0)
+                self.frame.rowconfigure(2, weight=1)
+                self.frame.columnconfigure(1, weight=0)
+            else:
+                self.left_card.grid_configure(row=1, column=0, columnspan=1, padx=(0, 14))
+                self.right_card.grid_configure(row=1, column=1, columnspan=1, padx=0, pady=0)
+                self.frame.rowconfigure(1, weight=1)
+                self.frame.rowconfigure(2, weight=0)
+                self.frame.columnconfigure(1, weight=1)
+            self._is_stacked = stacked
+
+        left_w = max(220, self.left_card.winfo_width() - 60)
+        right_w = max(280, self.right_card.winfo_width() - 60)
+        self.title_lbl.configure(wraplength=left_w)
+        self.artist_lbl.configure(wraplength=left_w)
+        self.lyrics_heading.configure(wraplength=right_w)
 
     def on_show(self):
         self._draw_cover()
@@ -777,6 +812,8 @@ class LibraryPage:
         card = ttk.Frame(self.frame, style="Card.TFrame", padding=18)
         card.grid(row=2, column=1, sticky="nsew")
         card.columnconfigure(0, weight=1)
+        self.detail_card = card
+        card.bind("<Configure>", self._on_detail_resize)
 
         ttk.Label(card, text="Details", style="CardTitle.TLabel").grid(row=0, column=0, sticky="w")
 
@@ -876,6 +913,17 @@ class LibraryPage:
         self.title_lbl.configure(text="No track selected")
         self.artist_lbl.configure(text="Pick a row on the left")
         self.meta_lbl.configure(text="Album: —\nYear: —\nPlays: —\nRating: —")
+
+    def _on_detail_resize(self, event=None):
+        if event is not None and event.widget is not self.detail_card:
+            return
+        width = self.detail_card.winfo_width()
+        if width <= 1:
+            return
+        wrap = max(200, width - 40)
+        self.title_lbl.configure(wraplength=wrap)
+        self.artist_lbl.configure(wraplength=wrap)
+        self.meta_lbl.configure(wraplength=wrap)
 
     # --- Events ---
 

@@ -3,7 +3,7 @@ from tkinter import messagebox, ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import clear_tree, setup_page_container, stars_text
+from .gui_helpers import bind_two_column_stacking, clear_tree, setup_page_container, stars_text
 from .validation import normalise_track_number
 
 
@@ -52,6 +52,8 @@ class UpdateLyrics:
         right.grid(row=2, column=1, sticky="nsew", padx=(10, 18), pady=10)
         right.columnconfigure(0, weight=1)
         right.rowconfigure(0, weight=1)
+
+        bind_two_column_stacking(self.window, left, right, breakpoint=900)
 
         search_card = ttk.Frame(left, style="Card.TFrame", padding=18)
         search_card.grid(row=0, column=0, sticky="ew")
