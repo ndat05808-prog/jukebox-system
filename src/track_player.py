@@ -9,9 +9,18 @@ from .create_track_list import CreateTrackList
 from .gui_helpers import clear_tree, draw_bar_chart, stars_text
 from .library_item import AlbumTrack
 from .track_statistics import TrackStatistics
+from .update_lyrics import UpdateLyrics
 from .update_tracks import UpdateTracks
 from .validation import get_valid_rating, normalise_track_number
-from .view_tracks import TrackViewer
+
+
+NAV_ITEMS = [
+    ("now_playing", "♪", "Now Playing"),
+    ("library", "≡", "Library"),
+    ("manage", "✎", "Manage"),
+    ("playlists", "♫", "Playlists"),
+    ("statistics", "▤", "Statistics"),
+]
 
 
 class JukeBoxApp:
@@ -19,21 +28,22 @@ class JukeBoxApp:
         self.window = tk.Tk()
         self.current_user = current_user or "Guest"
         self.on_logout = on_logout
-        self.window.title("JukeBox")
+        self.window.title("JukeBox Music")
 
-        self.open_windows: dict[str, tk.Toplevel] = {}
-        self.selected_track_key: str | None = None
         self.current_track_key: str | None = None
-        self.cover_image = None
+        self.selected_track_key: str | None = None
+        self.is_playing = False
         self.player_cover_image = None
-        self._responsive_mode = None
-        self._detail_cover_size = 170
-        self._player_cover_size = 64
+        self._nav_buttons: dict[str, ttk.Button] = {}
+        self._pages: dict[str, ttk.Frame] = {}
+        self._active_page = "now_playing"
+        self._child_pages: dict[str, object] = {}
 
         self._configure_window_size()
         fonts.configure()
         fonts.apply_theme(self.window)
-        self._configure_local_styles()
+
+        cover_manager.backfill_cover_paths()
 
         self.window.columnconfigure(0, minsize=self.sidebar_width)
         self.window.columnconfigure(1, weight=1)
@@ -41,484 +51,187 @@ class JukeBoxApp:
         self.window.rowconfigure(1, weight=0)
 
         self._build_sidebar()
-        self._build_main_area()
+        self._build_content_area()
         self._build_player_bar()
 
-        self.chart_canvas.bind("<Configure>", lambda event: self._refresh_stats_panel())
-        self.window.bind("<Configure>", self._on_window_resize)
-
-        self._populate_library_table(lib.get_track_records())
-        self._show_empty_state()
-        self._set_player_empty()
-        self._refresh_stats_panel()
-
-        self.window.after(120, self._update_responsive_layout)
+        self._build_pages()
+        self.switch_page("now_playing")
+        self._refresh_player_bar()
 
     def _configure_window_size(self):
-        screen_width = self.window.winfo_screenwidth()
-        screen_height = self.window.winfo_screenheight()
+        sw = self.window.winfo_screenwidth()
+        sh = self.window.winfo_screenheight()
 
-        self.compact_screen = screen_width <= 1366 or screen_height <= 768
-        self.sidebar_width = 170 if self.compact_screen else 210
+        self.compact_screen = sw <= 1366 or sh <= 768
+        self.sidebar_width = 210 if not self.compact_screen else 180
 
-        start_width = min(max(int(screen_width * 0.94), 980), screen_width)
-        start_height = min(max(int(screen_height * 0.92), 640), screen_height)
+        start_w = min(max(int(sw * 0.9), 1100), sw)
+        start_h = min(max(int(sh * 0.88), 680), sh)
 
-        min_width = min(980, max(860, screen_width - 60))
-        min_height = min(640, max(560, screen_height - 80))
-        self.window.minsize(min_width, min_height)
+        min_w = min(1080, max(960, sw - 60))
+        min_h = min(680, max(620, sh - 80))
+        self.window.minsize(min_w, min_h)
 
-        if screen_width >= 1500 and screen_height >= 880:
+        if sw >= 1500 and sh >= 880:
             try:
                 self.window.state("zoomed")
                 return
             except tk.TclError:
                 pass
 
-        pos_x = max(0, (screen_width - start_width) // 2)
-        pos_y = max(0, (screen_height - start_height) // 2)
-        self.window.geometry(f"{start_width}x{start_height}+{pos_x}+{pos_y}")
-
-    def _configure_local_styles(self):
-        style = ttk.Style(self.window)
-        button_font = ("Segoe UI", 10 if self.compact_screen else 11, "bold")
-        active_font = ("Segoe UI", 10 if self.compact_screen else 11, "bold")
-
-        style.configure(
-            "SidebarActive.TButton",
-            background=fonts.CARD_ALT,
-            foreground=fonts.ACCENT,
-            bordercolor=fonts.CARD_ALT,
-            relief="flat",
-            padding=(14, 10),
-            anchor="w",
-            font=active_font,
-        )
-        style.map(
-            "SidebarActive.TButton",
-            background=[("active", fonts.CARD_ALT), ("pressed", fonts.CARD_ALT)],
-            foreground=[("active", fonts.ACCENT), ("pressed", fonts.ACCENT)],
-        )
-
-        style.configure(
-            "DetailPrimary.TButton",
-            background=fonts.ACCENT_SOFT,
-            foreground=fonts.TEXT,
-            bordercolor=fonts.ACCENT,
-            padding=(10, 8),
-            font=button_font,
-        )
-        style.map(
-            "DetailPrimary.TButton",
-            background=[("active", fonts.ACCENT_DARK), ("pressed", fonts.ACCENT_DARK)],
-        )
-
-        style.configure(
-            "PlayerGhost.TButton",
-            background=fonts.CARD_ALT,
-            foreground=fonts.TEXT,
-            bordercolor=fonts.CARD_ALT,
-            padding=(8, 8),
-            font=button_font,
-        )
-        style.map(
-            "PlayerGhost.TButton",
-            background=[("active", fonts.SELECT_BG), ("pressed", fonts.SELECT_BG)],
-        )
+        pos_x = max(0, (sw - start_w) // 2)
+        pos_y = max(0, (sh - start_h) // 2)
+        self.window.geometry(f"{start_w}x{start_h}+{pos_x}+{pos_y}")
 
     def _build_sidebar(self):
-        self.sidebar = ttk.Frame(self.window, style="Sidebar.TFrame", padding=(16, 18))
-        self.sidebar.grid(row=0, column=0, rowspan=2, sticky="ns")
-        self.sidebar.columnconfigure(0, weight=1)
+        sidebar = ttk.Frame(self.window, style="Sidebar.TFrame", padding=(18, 20))
+        sidebar.grid(row=0, column=0, rowspan=2, sticky="ns")
+        sidebar.columnconfigure(0, weight=1)
 
-        ttk.Label(self.sidebar, text="◎", style="Logo.TLabel").grid(row=0, column=0, sticky="w")
-        ttk.Label(
-            self.sidebar,
-            text="JukeBox Music",
-            style="Sidebar.TLabel",
-            justify="left",
-        ).grid(row=1, column=0, sticky="w", pady=(6, 18))
+        brand = ttk.Frame(sidebar, style="Sidebar.TFrame")
+        brand.grid(row=0, column=0, sticky="ew", pady=(0, 22))
+        brand.columnconfigure(1, weight=1)
 
-        user_card = ttk.Frame(self.sidebar, style="Card.TFrame", padding=(12, 10))
-        user_card.grid(row=2, column=0, sticky="ew", pady=(0, 12))
-        user_card.columnconfigure(0, weight=1)
+        ttk.Label(brand, text="♪", style="Logo.TLabel").grid(row=0, column=0, padx=(0, 10))
 
-        ttk.Label(
-            user_card,
-            text="Signed in as",
-            style="CardMuted.TLabel"
-        ).grid(row=0, column=0, sticky="w")
+        brand_text = ttk.Frame(brand, style="Sidebar.TFrame")
+        brand_text.grid(row=0, column=1, sticky="w")
+        ttk.Label(brand_text, text="JukeBox", style="Sidebar.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(brand_text, text="music library", style="SidebarMuted.TLabel").grid(
+            row=1, column=0, sticky="w"
+        )
 
+        user_card = ttk.Frame(sidebar, style="Card.TFrame", padding=(14, 12))
+        user_card.grid(row=1, column=0, sticky="ew", pady=(0, 20))
+        user_card.columnconfigure(1, weight=1)
+
+        initial = (self.current_user[:1] or "?").upper()
+        ttk.Label(user_card, text=initial, style="Metric.TLabel").grid(
+            row=0, column=0, rowspan=2, padx=(0, 10)
+        )
+        ttk.Label(user_card, text="Signed in", style="CardSubtitle.TLabel").grid(
+            row=0, column=1, sticky="w"
+        )
         ttk.Label(
             user_card,
             text=self.current_user,
             style="CardTitle.TLabel",
+            wraplength=130,
             justify="left",
-            wraplength=150
-        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+        ).grid(row=1, column=1, sticky="w")
+
+        ttk.Label(sidebar, text="MENU", style="SidebarMuted.TLabel").grid(
+            row=2, column=0, sticky="w", pady=(0, 8)
+        )
+
+        nav_container = ttk.Frame(sidebar, style="Sidebar.TFrame")
+        nav_container.grid(row=3, column=0, sticky="ew")
+        nav_container.columnconfigure(0, weight=1)
+
+        for row_index, (key, icon, label) in enumerate(NAV_ITEMS):
+            button = ttk.Button(
+                nav_container,
+                text=f"  {icon}   {label}",
+                style="Nav.TButton",
+                command=lambda k=key: self.switch_page(k),
+            )
+            button.grid(row=row_index, column=0, sticky="ew", pady=3)
+            self._nav_buttons[key] = button
+
+        spacer = ttk.Frame(sidebar, style="Sidebar.TFrame")
+        spacer.grid(row=4, column=0, sticky="nsew")
+        sidebar.rowconfigure(4, weight=1)
 
         ttk.Button(
-            self.sidebar,
-            text="Library",
-            style="SidebarActive.TButton",
-            command=self.refresh_library,
-        ).grid(row=3, column=0, sticky="ew", pady=(0, 8))
-
-        ttk.Button(
-            self.sidebar,
-            text="Playlist Builder",
-            style="Sidebar.TButton",
-            command=lambda: self.open_child_window("create_track_list", "Opening Playlist Builder.", CreateTrackList),
-        ).grid(row=4, column=0, sticky="ew", pady=3)
-
-        ttk.Button(
-            self.sidebar,
-            text="Add / Remove",
-            style="Sidebar.TButton",
-            command=lambda: self.open_child_window("add_remove_tracks", "Opening Add / Remove Tracks.", AddRemoveTracks),
-        ).grid(row=5, column=0, sticky="ew", pady=3)
-
-        ttk.Button(
-            self.sidebar,
-            text="Statistics",
-            style="Sidebar.TButton",
-            command=lambda: self.open_child_window("statistics", "Opening Statistics window.", TrackStatistics),
-        ).grid(row=6, column=0, sticky="ew", pady=3)
-
-        ttk.Button(
-            self.sidebar,
-            text="Update Tracks",
-            style="Sidebar.TButton",
-            command=lambda: self.open_child_window("update_tracks", "Opening Update Tracks window.", UpdateTracks),
-        ).grid(row=7, column=0, sticky="ew", pady=3)
-
-        ttk.Button(
-            self.sidebar,
-            text="View Tracks",
-            style="Sidebar.TButton",
-            command=lambda: self.open_child_window("view_tracks", "Opening Library Browser.", TrackViewer),
-        ).grid(row=8, column=0, sticky="ew", pady=3)
-
-        spacer = ttk.Frame(self.sidebar, style="Sidebar.TFrame")
-        spacer.grid(row=9, column=0, sticky="nsew")
-        self.sidebar.rowconfigure(9, weight=1)
-
-        ttk.Button(
-            self.sidebar,
+            sidebar,
             text="Log Out",
             style="Ghost.TButton",
             command=self.logout,
-        ).grid(row=10, column=0, sticky="ew", pady=(14, 6))
+        ).grid(row=5, column=0, sticky="ew", pady=(14, 6))
 
         ttk.Button(
-            self.sidebar,
+            sidebar,
             text="Close App",
             style="Danger.TButton",
             command=self.window.destroy,
-        ).grid(row=11, column=0, sticky="ew")
+        ).grid(row=6, column=0, sticky="ew")
 
-    def _build_main_area(self):
-        self.container = ttk.Frame(self.window, style="Root.TFrame", padding=(16, 14, 16, 10))
-        self.container.grid(row=0, column=1, sticky="nsew")
-        self.container.columnconfigure(0, weight=5)
-        self.container.columnconfigure(1, weight=3)
-        self.container.rowconfigure(0, weight=0)
-        self.container.rowconfigure(1, weight=0)
-        self.container.rowconfigure(2, weight=1)
+    def _build_content_area(self):
+        self.content = ttk.Frame(self.window, style="Root.TFrame", padding=(22, 18, 22, 10))
+        self.content.grid(row=0, column=1, sticky="nsew")
+        self.content.columnconfigure(0, weight=1)
+        self.content.rowconfigure(0, weight=1)
 
-        self.header = ttk.Frame(self.container, style="Root.TFrame")
-        self.header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 12))
-        self.header.columnconfigure(0, weight=1)
-        self.header.columnconfigure(1, weight=1)
-
-        ttk.Label(self.header, text="Library", style="Hero.TLabel").grid(row=0, column=0, sticky="w")
-
-        self.search_frame = ttk.Frame(self.header, style="Root.TFrame")
-        self.search_frame.grid(row=0, column=1, sticky="e")
-        self.search_frame.columnconfigure(0, weight=1)
-
-        self.search_entry = ttk.Entry(self.search_frame)
-        self.search_entry.grid(row=0, column=0, padx=(0, 8), sticky="ew")
-        self.search_entry.bind("<Return>", lambda event: self.search_tracks())
-
-        ttk.Button(
-            self.search_frame,
-            text="Search",
-            style="Neon.TButton",
-            command=self.search_tracks,
-        ).grid(row=0, column=1)
-
-        self.left_side = ttk.Frame(self.container, style="Root.TFrame")
-        self.left_side.grid(row=1, column=0, rowspan=2, sticky="nsew", padx=(0, 10))
-        self.left_side.columnconfigure(0, weight=1)
-        self.left_side.rowconfigure(1, weight=1)
-
-        self.right_side = ttk.Frame(self.container, style="Root.TFrame")
-        self.right_side.grid(row=1, column=1, rowspan=2, sticky="nsew")
-        self.right_side.columnconfigure(0, weight=1)
-        self.right_side.rowconfigure(0, weight=0)
-        self.right_side.rowconfigure(1, weight=1)
-
-        self.control_card = ttk.Frame(self.left_side, style="Card.TFrame", padding=12)
-        self.control_card.grid(row=0, column=0, sticky="ew", pady=(0, 12))
-        for i in range(5):
-            self.control_card.columnconfigure(i, weight=1)
-
-        ttk.Label(self.control_card, text="Quick Filters", style="CardTitle.TLabel").grid(
-            row=0, column=0, sticky="w", pady=(0, 10)
-        )
-
-        self.rating_filter = ttk.Combobox(
-            self.control_card,
-            values=["0", "1", "2", "3", "4", "5"],
-            state="readonly",
-        )
-        self.rating_filter.grid(row=0, column=1, padx=6, sticky="ew")
-        self.rating_filter.set("1")
-
-        ttk.Button(
-            self.control_card,
-            text="Filter",
-            style="Ghost.TButton",
-            command=self.filter_by_rating,
-        ).grid(row=0, column=2, padx=6, sticky="ew")
-
-        ttk.Button(
-            self.control_card,
-            text="Show All",
-            style="Ghost.TButton",
-            command=self.refresh_library,
-        ).grid(row=0, column=3, padx=6, sticky="ew")
-
-        ttk.Button(
-            self.control_card,
-            text="Play",
-            style="Neon.TButton",
-            command=self.play_selected_track,
-        ).grid(row=1, column=0, pady=(8, 0), sticky="ew")
-
-        ttk.Button(
-            self.control_card,
-            text="Playlist",
-            style="Ghost.TButton",
-            command=lambda: self.open_child_window(
-                "create_track_list",
-                "Opening Playlist Builder.",
-                CreateTrackList,
-            ),
-        ).grid(row=1, column=1, padx=6, pady=(8, 0), sticky="ew")
-
-        ttk.Button(
-            self.control_card,
-            text="Refresh Stats",
-            style="Ghost.TButton",
-            command=self._refresh_stats_panel,
-        ).grid(row=1, column=2, padx=6, pady=(8, 0), sticky="ew")
-
-        self.table_card = ttk.Frame(self.left_side, style="Card.TFrame", padding=14)
-        self.table_card.grid(row=1, column=0, sticky="nsew")
-        self.table_card.columnconfigure(0, weight=1)
-        self.table_card.rowconfigure(1, weight=1)
-
-        table_header = ttk.Frame(self.table_card, style="Card.TFrame")
-        table_header.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        table_header.columnconfigure(0, weight=1)
-
-        ttk.Label(table_header, text="Track Library", style="CardTitle.TLabel").grid(
-            row=0, column=0, sticky="w"
-        )
-        self.result_count_label = ttk.Label(
-            table_header,
-            text="0 track(s)",
-            style="CardMuted.TLabel"
-        )
-        self.result_count_label.grid(row=0, column=1, sticky="e")
-
-        table_wrap = ttk.Frame(self.table_card, style="Card.TFrame")
-        table_wrap.grid(row=1, column=0, sticky="nsew")
-        table_wrap.columnconfigure(0, weight=1)
-        table_wrap.rowconfigure(0, weight=1)
-
-        columns = ("key", "title", "artist", "album", "year", "rating")
-        self.library_tree = ttk.Treeview(table_wrap, columns=columns, show="headings")
-
-        headings = {
-            "key": ("#", 50),
-            "title": ("Song Title", 220),
-            "artist": ("Artist", 160),
-            "album": ("Album", 160),
-            "year": ("Year", 70),
-            "rating": ("Rating", 110),
-        }
-
-        for column, (label, width) in headings.items():
-            self.library_tree.heading(column, text=label)
-            self.library_tree.column(column, width=width, anchor="w", stretch=True)
-
-        y_scroll = ttk.Scrollbar(table_wrap, orient="vertical", command=self.library_tree.yview)
-        x_scroll = ttk.Scrollbar(table_wrap, orient="horizontal", command=self.library_tree.xview)
-        self.library_tree.configure(yscrollcommand=y_scroll.set, xscrollcommand=x_scroll.set)
-
-        self.library_tree.grid(row=0, column=0, sticky="nsew")
-        y_scroll.grid(row=0, column=1, sticky="ns")
-        x_scroll.grid(row=1, column=0, sticky="ew")
-
-        self.library_tree.bind("<<TreeviewSelect>>", self._on_tree_select)
-
-        self.info_card = ttk.Frame(self.right_side, style="Card.TFrame", padding=14)
-        self.info_card.grid(row=0, column=0, sticky="nsew")
-        self.info_card.columnconfigure(0, weight=1)
-
-        ttk.Label(self.info_card, text="Track Details", style="CardTitle.TLabel").grid(
-            row=0, column=0, sticky="w"
-        )
-
-        self.detail_top = ttk.Frame(self.info_card, style="Card.TFrame")
-        self.detail_top.grid(row=1, column=0, sticky="ew", pady=(12, 10))
-        self.detail_top.columnconfigure(0, weight=0)
-        self.detail_top.columnconfigure(1, weight=1)
-
-        self.cover_canvas = tk.Canvas(self.detail_top, width=self._detail_cover_size, height=self._detail_cover_size)
-        fonts.style_canvas(self.cover_canvas, bg=fonts.CARD_ALT)
-        self.cover_canvas.grid(row=0, column=0, sticky="nw", padx=(0, 12))
-
-        self.meta_wrap = ttk.Frame(self.detail_top, style="Card.TFrame")
-        self.meta_wrap.grid(row=0, column=1, sticky="nsew")
-        self.meta_wrap.columnconfigure(0, weight=1)
-
-        self.detail_title = ttk.Label(
-            self.meta_wrap,
-            text="No track selected",
-            style="CardTitle.TLabel",
-            justify="left",
-            wraplength=220,
-        )
-        self.detail_title.grid(row=0, column=0, sticky="w")
-
-        self.detail_artist = ttk.Label(
-            self.meta_wrap,
-            text="Artist: —",
-            style="CardMuted.TLabel",
-            justify="left",
-            wraplength=220,
-        )
-        self.detail_artist.grid(row=1, column=0, sticky="w", pady=(4, 10))
-
-        self.detail_meta = ttk.Label(
-            self.meta_wrap,
-            text="Album: —\nYear: —\nTimes Played: —\nRating: —",
-            style="CardMuted.TLabel",
-            justify="left",
-            wraplength=220,
-        )
-        self.detail_meta.grid(row=2, column=0, sticky="nw")
-
-        self.detail_buttons = ttk.Frame(self.info_card, style="Card.TFrame")
-        self.detail_buttons.grid(row=2, column=0, sticky="ew", pady=(6, 0))
-        self.detail_buttons.columnconfigure(0, weight=1)
-        self.detail_buttons.columnconfigure(1, weight=1)
-
-        ttk.Button(
-            self.detail_buttons,
-            text="Update Info",
-            style="Neon.TButton",
-            command=lambda: self.open_child_window(
-                "update_tracks",
-                "Opening Update Tracks window.",
-                UpdateTracks
-            )
-        ).grid(row=0, column=0, sticky="ew", padx=(0, 6))
-
-        ttk.Button(
-            self.detail_buttons,
-            text="Delete Track",
-            style="Danger.TButton",
-            command=self.delete_selected_track
-        ).grid(row=0, column=1, sticky="ew")
-
-        self.stats_card = ttk.Frame(self.right_side, style="Card.TFrame", padding=14)
-        self.stats_card.grid(row=1, column=0, sticky="nsew", pady=(12, 0))
-        self.stats_card.columnconfigure(0, weight=1)
-        self.stats_card.rowconfigure(1, weight=1)
-
-        stats_header = ttk.Frame(self.stats_card, style="Card.TFrame")
-        stats_header.grid(row=0, column=0, sticky="ew", pady=(0, 8))
-        stats_header.columnconfigure(0, weight=1)
-
-        ttk.Label(stats_header, text="Statistics", style="CardTitle.TLabel").grid(
-            row=0, column=0, sticky="w"
-        )
-        self.stats_summary = ttk.Label(
-            stats_header,
-            text="",
-            style="CardMuted.TLabel"
-        )
-        self.stats_summary.grid(row=0, column=1, sticky="e")
-
-        self.chart_canvas = tk.Canvas(self.stats_card, height=190)
-        fonts.style_canvas(self.chart_canvas, bg=fonts.CARD)
-        self.chart_canvas.grid(row=1, column=0, sticky="nsew")
+        self.page_host = ttk.Frame(self.content, style="Root.TFrame")
+        self.page_host.grid(row=0, column=0, sticky="nsew")
+        self.page_host.columnconfigure(0, weight=1)
+        self.page_host.rowconfigure(0, weight=1)
 
     def _build_player_bar(self):
-        self.player_bar = ttk.Frame(self.window, style="Panel.TFrame", padding=(16, 12))
-        self.player_bar.grid(row=1, column=1, sticky="ew", padx=(16, 16), pady=(0, 16))
-        self.player_bar.columnconfigure(0, weight=0)
-        self.player_bar.columnconfigure(1, weight=0)
-        self.player_bar.columnconfigure(2, weight=1)
-        self.player_bar.columnconfigure(3, weight=0)
+        bar = ttk.Frame(self.window, style="Panel.TFrame", padding=(18, 12))
+        bar.grid(row=1, column=1, sticky="ew")
+        bar.columnconfigure(1, weight=1)
 
-        self.player_left = ttk.Frame(self.player_bar, style="Panel.TFrame")
-        self.player_left.grid(row=0, column=0, sticky="w")
-        self.player_left.columnconfigure(1, weight=1)
+        left = ttk.Frame(bar, style="Panel.TFrame")
+        left.grid(row=0, column=0, sticky="w")
+        left.columnconfigure(1, weight=1)
 
-        self.player_cover_canvas = tk.Canvas(
-            self.player_left,
-            width=self._player_cover_size,
-            height=self._player_cover_size,
-        )
+        self.player_cover_canvas = tk.Canvas(left, width=56, height=56)
         fonts.style_canvas(self.player_cover_canvas, bg=fonts.CARD_ALT)
-        self.player_cover_canvas.grid(row=0, column=0, padx=(0, 10))
+        self.player_cover_canvas.grid(row=0, column=0, rowspan=2, padx=(0, 14))
 
-        self.player_info = ttk.Label(
-            self.player_left,
-            text="No track selected\nChoose a song from the library.",
+        self.player_title_lbl = ttk.Label(
+            left,
+            text="No track loaded",
             style="Panel.TLabel",
+            font=fonts._ff(12, "bold"),
+            wraplength=220,
             justify="left",
         )
-        self.player_info.grid(row=0, column=1, sticky="w")
+        self.player_title_lbl.grid(row=0, column=1, sticky="w")
 
-        self.controls = ttk.Frame(self.player_bar, style="Panel.TFrame")
-        self.controls.grid(row=0, column=1, sticky="w", padx=(14, 10))
+        self.player_artist_lbl = ttk.Label(
+            left,
+            text="Pick a song from your library",
+            background=fonts.PANEL,
+            foreground=fonts.MUTED,
+            font=fonts._ff(10),
+            wraplength=220,
+            justify="left",
+        )
+        self.player_artist_lbl.grid(row=1, column=1, sticky="w")
+
+        center = ttk.Frame(bar, style="Panel.TFrame")
+        center.grid(row=0, column=1, sticky="nsew", padx=16)
+        center.columnconfigure(0, weight=1)
+
+        controls = ttk.Frame(center, style="Panel.TFrame")
+        controls.grid(row=0, column=0)
 
         ttk.Button(
-            self.controls,
-            text="◀",
-            style="Ghost.TButton",
-            command=self._player_previous
-        ).pack(side="left")
+            controls, text="⏮", style="IconButton.TButton", command=self._player_previous
+        ).grid(row=0, column=0, padx=3)
+
+        self.play_btn = ttk.Button(
+            controls, text="▶", style="PlayFab.TButton", command=self.toggle_play
+        )
+        self.play_btn.grid(row=0, column=1, padx=8)
 
         ttk.Button(
-            self.controls,
-            text="▶",
-            style="Neon.TButton",
-            command=self.play_selected_track
-        ).pack(side="left", padx=8)
+            controls, text="⏭", style="IconButton.TButton", command=self._player_next
+        ).grid(row=0, column=2, padx=3)
 
-        ttk.Button(
-            self.controls,
-            text="▶▶",
-            style="Ghost.TButton",
-            command=self._player_next
-        ).pack(side="left")
+        progress = ttk.Frame(center, style="Panel.TFrame")
+        progress.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+        progress.columnconfigure(1, weight=1)
 
-        self.progress_wrap = ttk.Frame(self.player_bar, style="Panel.TFrame")
-        self.progress_wrap.grid(row=0, column=2, sticky="ew", padx=(8, 8))
-        self.progress_wrap.columnconfigure(1, weight=1)
-
-        ttk.Label(self.progress_wrap, text="1:30", style="Panel.TLabel").grid(row=0, column=0, sticky="w")
+        self.time_cur_lbl = ttk.Label(
+            progress, text="0:00", background=fonts.PANEL, foreground=fonts.MUTED, font=fonts._ff(9)
+        )
+        self.time_cur_lbl.grid(row=0, column=0, sticky="w")
 
         self.progress = tk.Scale(
-            self.progress_wrap,
+            progress,
             from_=0,
             to=100,
             orient="horizontal",
@@ -529,19 +242,28 @@ class JukeBoxApp:
             bg=fonts.PANEL,
             fg=fonts.TEXT,
             activebackground=fonts.ACCENT,
-            sliderlength=12,
+            sliderlength=14,
         )
-        self.progress.grid(row=0, column=1, sticky="ew", padx=10)
-        self.progress.set(35)
+        self.progress.grid(row=0, column=1, sticky="ew", padx=8)
 
-        ttk.Label(self.progress_wrap, text="3:02", style="Panel.TLabel").grid(row=0, column=2, sticky="e")
+        self.time_total_lbl = ttk.Label(
+            progress,
+            text="0:00",
+            background=fonts.PANEL,
+            foreground=fonts.MUTED,
+            font=fonts._ff(9),
+        )
+        self.time_total_lbl.grid(row=0, column=2, sticky="e")
 
-        self.volume_wrap = ttk.Frame(self.player_bar, style="Panel.TFrame")
-        self.volume_wrap.grid(row=0, column=3, sticky="e")
-        ttk.Label(self.volume_wrap, text="🔊", style="Panel.TLabel").pack(side="left", padx=(0, 6))
+        right = ttk.Frame(bar, style="Panel.TFrame")
+        right.grid(row=0, column=2, sticky="e")
+
+        ttk.Label(right, text="♫", background=fonts.PANEL, foreground=fonts.ACCENT_GLOW, font=fonts._ff(14)).grid(
+            row=0, column=0, padx=(0, 8)
+        )
 
         self.volume = tk.Scale(
-            self.volume_wrap,
+            right,
             from_=0,
             to=100,
             orient="horizontal",
@@ -555,405 +277,159 @@ class JukeBoxApp:
             sliderlength=12,
             length=110,
         )
-        self.volume.pack(side="left")
-        self.volume.set(65)
+        self.volume.grid(row=0, column=1)
+        self.volume.set(70)
 
-    def _on_window_resize(self, event=None):
-        if event is not None and event.widget is not self.window:
+    # --- Page management ---
+
+    def _build_pages(self):
+        self._pages["now_playing"] = NowPlayingPage(self.page_host, self).frame
+        self._pages["library"] = LibraryPage(self.page_host, self).frame
+        self._pages["manage"] = ManagePage(self.page_host, self).frame
+        self._pages["playlists"] = PlaylistsPage(self.page_host, self).frame
+        self._pages["statistics"] = StatisticsPage(self.page_host, self).frame
+
+        for frame in self._pages.values():
+            frame.grid(row=0, column=0, sticky="nsew")
+
+    def switch_page(self, key: str):
+        if key not in self._pages:
             return
-        self.window.after_idle(self._update_responsive_layout)
+        self._active_page = key
+        self._pages[key].tkraise()
 
-    def _update_responsive_layout(self):
-        width = self.window.winfo_width()
-        if width <= 1:
-            return
+        for nav_key, button in self._nav_buttons.items():
+            button.configure(style="NavActive.TButton" if nav_key == key else "Nav.TButton")
 
-        new_mode = "stacked" if width < 1280 else "wide"
-        if self._responsive_mode != new_mode:
-            self._responsive_mode = new_mode
-            self._apply_main_layout(new_mode)
-            self._apply_player_layout(new_mode)
+        handler = self._child_pages.get(key)
+        if handler and hasattr(handler, "on_show"):
+            handler.on_show()
 
-        self._detail_cover_size = 130 if width < 1180 else 150 if width < 1450 else 170
-        self._player_cover_size = 52 if width < 1180 else 60 if width < 1450 else 64
+    def register_page(self, key: str, handler):
+        self._child_pages[key] = handler
 
-        self.cover_canvas.configure(width=self._detail_cover_size, height=self._detail_cover_size)
-        self.player_cover_canvas.configure(width=self._player_cover_size, height=self._player_cover_size)
-        self.volume.configure(length=90 if width < 1180 else 110 if width < 1450 else 130)
+    # --- Player logic ---
 
-        detail_width = max(180, self.info_card.winfo_width() - self._detail_cover_size - 70)
-        self.detail_title.configure(wraplength=detail_width)
-        self.detail_artist.configure(wraplength=detail_width)
-        self.detail_meta.configure(wraplength=detail_width)
-
-        if self.selected_track_key is not None and lib.get_item(self.selected_track_key) is not None:
-            self._show_track_detail(self.selected_track_key)
-        else:
-            self._show_empty_state()
-
-        if self.current_track_key is not None and lib.get_item(self.current_track_key) is not None:
-            self._update_player_now_playing(self.current_track_key)
-        else:
-            self._set_player_empty()
-
-    def _apply_main_layout(self, mode: str):
-        if mode == "stacked":
-            self.header.grid_configure(row=0, column=0, columnspan=2, sticky="ew")
-            self.search_frame.grid_configure(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 0))
-            self.left_side.grid_configure(row=1, column=0, columnspan=2, rowspan=1, sticky="nsew", padx=(0, 0), pady=(0, 10))
-            self.right_side.grid_configure(row=2, column=0, columnspan=2, rowspan=1, sticky="nsew")
-            self.container.rowconfigure(1, weight=3)
-            self.container.rowconfigure(2, weight=2)
-        else:
-            self.header.grid_configure(row=0, column=0, columnspan=2, sticky="ew")
-            self.search_frame.grid_configure(row=0, column=1, columnspan=1, sticky="e", pady=(0, 0))
-            self.left_side.grid_configure(row=1, column=0, columnspan=1, rowspan=2, sticky="nsew", padx=(0, 10), pady=(0, 0))
-            self.right_side.grid_configure(row=1, column=1, columnspan=1, rowspan=2, sticky="nsew")
-            self.container.rowconfigure(1, weight=0)
-            self.container.rowconfigure(2, weight=1)
-
-    def _apply_player_layout(self, mode: str):
-        if mode == "stacked":
-            self.player_bar.columnconfigure(0, weight=1)
-            self.player_bar.columnconfigure(1, weight=0)
-            self.player_bar.columnconfigure(2, weight=0)
-            self.player_bar.columnconfigure(3, weight=0)
-
-            self.player_left.grid_configure(row=0, column=0, columnspan=2, sticky="w")
-            self.controls.grid_configure(row=1, column=0, sticky="w", padx=(0, 10), pady=(10, 0))
-            self.progress_wrap.grid_configure(row=2, column=0, columnspan=2, sticky="ew", padx=(0, 0), pady=(10, 0))
-            self.volume_wrap.grid_configure(row=1, column=1, sticky="e", pady=(10, 0))
-        else:
-            self.player_bar.columnconfigure(0, weight=0)
-            self.player_bar.columnconfigure(1, weight=0)
-            self.player_bar.columnconfigure(2, weight=1)
-            self.player_bar.columnconfigure(3, weight=0)
-
-            self.player_left.grid_configure(row=0, column=0, columnspan=1, sticky="w")
-            self.controls.grid_configure(row=0, column=1, sticky="w", padx=(14, 10), pady=(0, 0))
-            self.progress_wrap.grid_configure(row=0, column=2, columnspan=1, sticky="ew", padx=(8, 8), pady=(0, 0))
-            self.volume_wrap.grid_configure(row=0, column=3, sticky="e", pady=(0, 0))
-
-    def _draw_placeholder(self, canvas: tk.Canvas, size: int, title: str, subtitle: str = "", accent=False):
-        canvas.delete("all")
-        pad = max(6, size // 12)
-        mid = size // 2
-        outline = fonts.ACCENT if accent else fonts.BORDER
-        fill = fonts.CARD_ALT
-        canvas.create_rectangle(pad, pad, size - pad, size - pad, outline=outline, width=2, fill=fill)
-        if subtitle:
-            canvas.create_text(
-                mid,
-                max(18, int(size * 0.42)),
-                text=title,
-                fill=fonts.TEXT,
-                font=("Segoe UI", 11, "bold"),
-                width=max(90, size - 30),
-            )
-            canvas.create_text(
-                mid,
-                max(36, int(size * 0.68)),
-                text=subtitle,
-                fill=fonts.MUTED,
-                font=("Segoe UI", 9),
-                width=max(80, size - 34),
-            )
-        else:
-            canvas.create_text(
-                mid,
-                mid,
-                text=title,
-                fill=fonts.MUTED if not accent else fonts.ACCENT,
-                font=("Segoe UI", max(14, size // 3), "bold"),
-            )
-
-    def _populate_library_table(self, records: list[dict]):
-        clear_tree(self.library_tree)
-        for record in records:
-            self.library_tree.insert(
-                "",
-                "end",
-                values=(
-                    record["key"],
-                    record["name"],
-                    record["artist"],
-                    record["album"] or "Common",
-                    record["year"] or "—",
-                    stars_text(record["rating"]),
-                ),
-            )
-        self.result_count_label.configure(text=f"{len(records)} track(s)")
-
-    def _show_empty_state(self):
-        self.cover_image = None
-        self._draw_placeholder(
-            self.cover_canvas,
-            self._detail_cover_size,
-            "No track selected",
-            "Select a row to preview.",
-            accent=False,
-        )
-        self.detail_title.configure(text="No track selected")
-        self.detail_artist.configure(text="Artist: —")
-        self.detail_meta.configure(text="Album: —\nYear: —\nTimes Played: —\nRating: —")
-
-    def _set_player_empty(self):
-        self.player_cover_image = None
-        self.player_info.configure(text="No track selected\nChoose a song from the library.")
-        self._draw_placeholder(self.player_cover_canvas, self._player_cover_size, "♪", accent=False)
-
-    def _update_player_now_playing(self, track_key: str):
-        item = lib.get_item(track_key)
-        if item is None:
-            self._set_player_empty()
-            return
-
-        self.player_info.configure(text=f"{item.name}\n{item.artist}")
-
-        self.player_cover_canvas.delete("all")
-        self.player_cover_image = cover_manager.load_cover_image(
-            track_key,
-            max_size=max(44, self._player_cover_size - 4)
-        )
-
-        if self.player_cover_image is not None:
-            self.player_cover_canvas.create_image(
-                self._player_cover_size // 2,
-                self._player_cover_size // 2,
-                image=self.player_cover_image
-            )
-        else:
-            self._draw_placeholder(self.player_cover_canvas, self._player_cover_size, "♪", accent=True)
-
-    def _show_track_detail(self, track_key: str):
-        item = lib.get_item(track_key)
-        if item is None:
-            self._show_empty_state()
-            return
-
-        self.selected_track_key = track_key
-
-        album = item.album if isinstance(item, AlbumTrack) and item.album else "—"
-        year = item.year if isinstance(item, AlbumTrack) and item.year is not None else "—"
-
-        self.detail_title.configure(text=item.name)
-        self.detail_artist.configure(text=f"Artist: {item.artist}")
-        self.detail_meta.configure(
-            text=(
-                f"Album: {album}\n"
-                f"Year: {year}\n"
-                f"Times Played: {item.play_count}\n"
-                f"Rating: {item.stars()}"
-            )
-        )
-
-        self.cover_canvas.delete("all")
-        self.cover_image = cover_manager.load_cover_image(
-            track_key,
-            max_size=max(100, self._detail_cover_size - 12)
-        )
-
-        if self.cover_image is not None:
-            self.cover_canvas.create_image(
-                self._detail_cover_size // 2,
-                self._detail_cover_size // 2,
-                image=self.cover_image
-            )
-        else:
-            self._draw_placeholder(
-                self.cover_canvas,
-                self._detail_cover_size,
-                item.name,
-                item.artist,
-                accent=True
-            )
-
-    def _refresh_stats_panel(self):
-        stats = lib.get_statistics()
-        self.stats_summary.configure(text=f"{stats['total_tracks']} track(s) • {stats['total_plays']} plays")
-
-        top_tracks = sorted(
-            stats["tracks"],
-            key=lambda item: (-item["play_count"], item["key"])
-        )[:6]
-
-        values = [track["play_count"] for track in top_tracks]
-        labels = [track["key"] for track in top_tracks]
-        draw_bar_chart(self.chart_canvas, values, labels)
-
-    def _on_tree_select(self, event=None):
-        selection = self.library_tree.selection()
-        if not selection:
-            return
-        values = self.library_tree.item(selection[0], "values")
-        self._show_track_detail(values[0])
-
-    def refresh_library(self):
-        self._populate_library_table(lib.get_track_records())
-        self._refresh_stats_panel()
-        self.status_message("Library refreshed.")
-
-    def search_tracks(self):
-        keyword = self.search_entry.get().strip().lower()
-        records = [
-            record
-            for record in lib.get_track_records()
-            if keyword == ""
-            or keyword in record["name"].lower()
-            or keyword in record["artist"].lower()
-            or keyword in (record["album"] or "").lower()
-        ]
-        self._populate_library_table(records)
-
-        if keyword == "":
-            self.status_message("Search box was empty, so all tracks were shown.")
-        elif records:
-            self.status_message(f"Showing search results for '{keyword}'.")
-        else:
-            self.status_message("No matching tracks were found.")
-            self._show_empty_state()
-
-    def filter_by_rating(self):
-        rating = get_valid_rating(self.rating_filter.get(), allow_zero=True)
-        if rating is None:
-            self.status_message("Filter score must be between 0 and 5.")
-            return
-
-        records = [record for record in lib.get_track_records() if record["rating"] == rating]
-        self._populate_library_table(records)
-
-        if records:
-            self.status_message(f"Showing tracks with rating {rating}.")
-        else:
-            self.status_message(f"No tracks were found with rating {rating}.")
-            self._show_empty_state()
-
-    def play_selected_track(self):
-        track_key = self.selected_track_key
-        if track_key is None:
-            selection = self.library_tree.selection()
-            if selection:
-                track_key = self.library_tree.item(selection[0], "values")[0]
-
-        if track_key is None:
-            self.status_message("Select a track first.")
-            return
-
+    def play_track(self, track_key: str, source: str = "dashboard"):
         track_key = normalise_track_number(track_key)
         if track_key is None or lib.get_name(track_key) is None:
-            self.status_message("That track number does not exist.")
-            return
+            self.status(f"Track {track_key} does not exist.")
+            return False
 
         if not lib.increment_play_count(track_key, auto_save=False):
-            self.status_message(f"Track {track_key} could not be played.")
-            return
+            self.status(f"Track {track_key} could not be played.")
+            return False
 
-        lib.add_history_entry(track_key, source="dashboard")
+        lib.add_history_entry(track_key, source=source)
         lib.save_library()
 
         self.current_track_key = track_key
         self.selected_track_key = track_key
-        self.progress.set(min(100, self.progress.get() + 10))
+        self.is_playing = True
 
-        self.refresh_library()
-        self._show_track_detail(track_key)
-        self._update_player_now_playing(track_key)
-        self.status_message(f"Now playing: {lib.get_name(track_key)}.")
+        self.progress.set(min(100, self.progress.get() + 12))
+        self._refresh_player_bar()
+        self._notify_pages_refresh()
 
-    def delete_selected_track(self):
-        track_key = self.selected_track_key
-        if track_key is None:
-            self.status_message("Select a track before deleting.")
+        self.status(f"Now playing: {lib.get_name(track_key)}")
+        return True
+
+    def toggle_play(self):
+        if self.current_track_key is None:
+            records = lib.get_track_records()
+            if records:
+                self.play_track(records[0]["key"])
             return
 
-        track_name = lib.get_name(track_key)
-        if track_name is None:
-            self.status_message("That track no longer exists.")
-            return
-
-        confirmed = messagebox.askyesno(
-            "Delete Track",
-            f"Are you sure you want to delete track {track_key}: '{track_name}'?",
-            parent=self.window,
-        )
-        if not confirmed:
-            self.status_message("Delete track cancelled.")
-            return
-
-        if not lib.delete_track(track_key):
-            self.status_message("Track could not be deleted.")
-            return
-
-        if self.current_track_key == track_key:
-            self.current_track_key = None
-            self._set_player_empty()
-
-        self.selected_track_key = None
-        self.refresh_library()
-        self._show_empty_state()
-        self.status_message(f"Deleted track {track_key}: '{track_name}'.")
+        self.is_playing = not self.is_playing
+        self.play_btn.configure(text="⏸" if self.is_playing else "▶")
+        self.status("Playing" if self.is_playing else "Paused")
 
     def _player_previous(self):
         records = lib.get_track_records()
         if not records:
             return
-
-        if self.current_track_key is None:
-            self.selected_track_key = records[0]["key"]
-            self.play_selected_track()
-            return
-
-        keys = [record["key"] for record in records]
+        keys = [r["key"] for r in records]
         if self.current_track_key not in keys:
-            self.current_track_key = keys[0]
-
-        index = keys.index(self.current_track_key)
-        self.selected_track_key = keys[(index - 1) % len(keys)]
-        self.play_selected_track()
+            self.play_track(keys[0])
+            return
+        idx = keys.index(self.current_track_key)
+        self.play_track(keys[(idx - 1) % len(keys)])
 
     def _player_next(self):
         records = lib.get_track_records()
         if not records:
             return
-
-        if self.current_track_key is None:
-            self.selected_track_key = records[0]["key"]
-            self.play_selected_track()
-            return
-
-        keys = [record["key"] for record in records]
+        keys = [r["key"] for r in records]
         if self.current_track_key not in keys:
-            self.current_track_key = keys[0]
+            self.play_track(keys[0])
+            return
+        idx = keys.index(self.current_track_key)
+        self.play_track(keys[(idx + 1) % len(keys)])
 
-        index = keys.index(self.current_track_key)
-        self.selected_track_key = keys[(index + 1) % len(keys)]
-        self.play_selected_track()
-
-    def open_child_window(self, key, status_message, window_class):
-        existing_window = self.open_windows.get(key)
-        if existing_window is not None and existing_window.winfo_exists():
-            existing_window.lift()
-            existing_window.focus_force()
-            self.status_message(f"{window_class.__name__} is already open.")
+    def _refresh_player_bar(self):
+        if self.current_track_key is None:
+            self.player_title_lbl.configure(text="No track loaded")
+            self.player_artist_lbl.configure(text="Pick a song from your library")
+            self.player_cover_image = None
+            self.player_cover_canvas.delete("all")
+            self._draw_cover_placeholder(self.player_cover_canvas, 56, "♪")
+            self.play_btn.configure(text="▶")
+            self.time_cur_lbl.configure(text="0:00")
+            self.time_total_lbl.configure(text="0:00")
             return
 
-        child = tk.Toplevel(self.window)
-        self.open_windows[key] = child
+        item = lib.get_item(self.current_track_key)
+        if item is None:
+            self.current_track_key = None
+            self._refresh_player_bar()
+            return
 
-        def on_close():
-            self.open_windows.pop(key, None)
-            child.destroy()
-            self.refresh_library()
+        self.player_title_lbl.configure(text=item.name)
+        self.player_artist_lbl.configure(text=item.artist)
 
-        child.protocol("WM_DELETE_WINDOW", on_close)
-        window_class(child)
-        self.status_message(status_message)
+        self.player_cover_canvas.delete("all")
+        self.player_cover_image = cover_manager.load_cover_image(self.current_track_key, max_size=52)
+        if self.player_cover_image is not None:
+            self.player_cover_canvas.create_image(28, 28, image=self.player_cover_image)
+        else:
+            self._draw_cover_placeholder(self.player_cover_canvas, 56, "♪", accent=True)
 
-    def _close_all_child_windows(self):
-        for child in list(self.open_windows.values()):
-            if child is not None and child.winfo_exists():
-                child.destroy()
-        self.open_windows.clear()
+        self.play_btn.configure(text="⏸" if self.is_playing else "▶")
+        self.time_cur_lbl.configure(text="1:12")
+        self.time_total_lbl.configure(text="3:24")
+
+    def _draw_cover_placeholder(
+        self, canvas: tk.Canvas, size: int, glyph: str, accent: bool = False
+    ):
+        canvas.delete("all")
+        pad = max(2, size // 16)
+        outline = fonts.ACCENT if accent else fonts.BORDER_SOFT
+        fill = fonts.CARD_ALT
+        canvas.create_rectangle(pad, pad, size - pad, size - pad, outline=outline, fill=fill, width=1)
+        canvas.create_text(
+            size // 2,
+            size // 2,
+            text=glyph,
+            fill=fonts.ACCENT_GLOW if accent else fonts.MUTED,
+            font=fonts._ff(max(14, size // 3), "bold"),
+        )
+
+    # --- Broadcast helpers ---
+
+    def _notify_pages_refresh(self):
+        for handler in self._child_pages.values():
+            if hasattr(handler, "on_library_change"):
+                handler.on_library_change()
+
+    def refresh_library(self):
+        self._notify_pages_refresh()
+        self._refresh_player_bar()
+
+    # --- Session ---
+
+    def status(self, text: str):
+        self.window.title(f"JukeBox Music — {text}")
 
     def logout(self):
         confirmed = messagebox.askyesno(
@@ -964,17 +440,576 @@ class JukeBoxApp:
         if not confirmed:
             return
 
-        self._close_all_child_windows()
         self.window.destroy()
 
         if callable(self.on_logout):
             self.on_logout()
 
-    def status_message(self, text: str):
-        self.window.title(f"JukeBox - {text}")
-
     def run(self):
         self.window.mainloop()
+
+
+# =============================================================================
+# Pages
+# =============================================================================
+
+
+class NowPlayingPage:
+    def __init__(self, parent, app: JukeBoxApp):
+        self.app = app
+        self.cover_image = None
+        self.frame = ttk.Frame(parent, style="Root.TFrame")
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(1, weight=1)
+        app.register_page("now_playing", self)
+
+        self._build()
+        self.on_show()
+
+    def _build(self):
+        self.frame.columnconfigure(0, weight=0)
+        self.frame.columnconfigure(1, weight=1)
+        self.frame.rowconfigure(1, weight=1)
+
+        header = ttk.Frame(self.frame, style="Root.TFrame")
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 18))
+        header.columnconfigure(0, weight=1)
+
+        ttk.Label(header, text="Now Playing", style="Hero.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(
+            header,
+            text="Enjoy your music — lyrics, cover art and metadata in one glance.",
+            style="Muted.TLabel",
+        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+
+        # ===== Left column: cover + meta =====
+        left = ttk.Frame(self.frame, style="Card.TFrame", padding=24)
+        left.grid(row=1, column=0, sticky="nsew", padx=(0, 14))
+        left.columnconfigure(0, weight=1)
+
+        self.tag_lbl = ttk.Label(left, text="◈  NOW PLAYING", style="Tag.TLabel")
+        self.tag_lbl.grid(row=0, column=0, sticky="w", pady=(0, 14))
+
+        cover_wrap = ttk.Frame(left, style="Card.TFrame")
+        cover_wrap.grid(row=1, column=0, sticky="n")
+
+        self.cover_canvas = tk.Canvas(cover_wrap, width=320, height=320)
+        fonts.style_canvas(self.cover_canvas, bg=fonts.CARD_ALT)
+        self.cover_canvas.grid(row=0, column=0)
+
+        self.title_lbl = ttk.Label(
+            left,
+            text="No track loaded",
+            background=fonts.CARD,
+            foreground=fonts.TEXT,
+            font=fonts._ff(22, "bold"),
+            wraplength=320,
+            justify="left",
+        )
+        self.title_lbl.grid(row=2, column=0, sticky="w", pady=(20, 4))
+
+        self.artist_lbl = ttk.Label(
+            left,
+            text="Pick a track to start playing",
+            background=fonts.CARD,
+            foreground=fonts.ACCENT_GLOW,
+            font=fonts._ff(13),
+            wraplength=320,
+            justify="left",
+        )
+        self.artist_lbl.grid(row=3, column=0, sticky="w", pady=(0, 18))
+
+        meta_grid = ttk.Frame(left, style="Card.TFrame")
+        meta_grid.grid(row=4, column=0, sticky="ew")
+        meta_grid.columnconfigure(0, weight=1)
+        meta_grid.columnconfigure(1, weight=1)
+
+        self.meta_labels = {}
+        meta_keys = [("Album", "album"), ("Year", "year"), ("Plays", "plays"), ("Rating", "rating")]
+        for idx, (label, key) in enumerate(meta_keys):
+            row = idx // 2
+            col = idx % 2
+            cell = ttk.Frame(meta_grid, style="Card.TFrame", padding=(0, 0, 16, 12))
+            cell.grid(row=row, column=col, sticky="w")
+            ttk.Label(cell, text=label.upper(), style="CardSubtitle.TLabel").grid(row=0, column=0, sticky="w")
+            value = ttk.Label(
+                cell,
+                text="—",
+                background=fonts.CARD,
+                foreground=fonts.TEXT,
+                font=fonts._ff(12, "bold"),
+                wraplength=150,
+                justify="left",
+            )
+            value.grid(row=1, column=0, sticky="w", pady=(4, 0))
+            self.meta_labels[key] = value
+
+        actions = ttk.Frame(left, style="Card.TFrame")
+        actions.grid(row=5, column=0, sticky="ew", pady=(18, 0))
+        actions.columnconfigure(0, weight=1)
+
+        ttk.Button(
+            actions,
+            text="Go to Library",
+            style="Ghost.TButton",
+            command=lambda: self.app.switch_page("library"),
+        ).grid(row=0, column=0, sticky="ew")
+
+        # ===== Right column: lyrics =====
+        right = ttk.Frame(self.frame, style="Card.TFrame", padding=24)
+        right.grid(row=1, column=1, sticky="nsew")
+        right.columnconfigure(0, weight=1)
+        right.rowconfigure(2, weight=1)
+
+        ttk.Label(right, text="LYRICS", style="Tag.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 10))
+
+        self.lyrics_heading = ttk.Label(
+            right,
+            text="No track loaded",
+            background=fonts.CARD,
+            foreground=fonts.ACCENT_GLOW,
+            font=fonts._ff(14, "bold"),
+            wraplength=520,
+            justify="left",
+        )
+        self.lyrics_heading.grid(row=1, column=0, sticky="w", pady=(0, 14))
+
+        lyrics_wrap = ttk.Frame(right, style="Card.TFrame")
+        lyrics_wrap.grid(row=2, column=0, sticky="nsew")
+        lyrics_wrap.columnconfigure(0, weight=1)
+        lyrics_wrap.rowconfigure(0, weight=1)
+
+        self.lyrics_txt = tk.Text(
+            lyrics_wrap,
+            wrap="word",
+            width=1,
+            height=1,
+            padx=18,
+            pady=16,
+            spacing1=2,
+            spacing3=4,
+            relief="flat",
+            borderwidth=0,
+            highlightthickness=0,
+        )
+        fonts.style_text_widget(self.lyrics_txt)
+        self.lyrics_txt.configure(font=fonts._ff(12), bg=fonts.CARD_ALT, fg=fonts.TEXT_SOFT)
+        self.lyrics_txt.grid(row=0, column=0, sticky="nsew")
+
+        lyrics_scroll = ttk.Scrollbar(lyrics_wrap, orient="vertical", command=self.lyrics_txt.yview)
+        self.lyrics_txt.configure(yscrollcommand=lyrics_scroll.set)
+        lyrics_scroll.grid(row=0, column=1, sticky="ns")
+
+        self._set_lyrics_text("Pick a track to see its lyrics here.", placeholder=True)
+
+    def _set_lyrics_text(self, text: str, placeholder: bool = False):
+        self.lyrics_txt.configure(state="normal")
+        self.lyrics_txt.delete("1.0", tk.END)
+        if text:
+            self.lyrics_txt.insert("1.0", text)
+        self.lyrics_txt.configure(
+            state="disabled",
+            fg=fonts.MUTED if placeholder else fonts.TEXT_SOFT,
+        )
+
+    def on_show(self):
+        self._draw_cover()
+        self._draw_meta()
+
+    def on_library_change(self):
+        self.on_show()
+
+    def _draw_cover(self):
+        self.cover_canvas.delete("all")
+        key = self.app.current_track_key
+
+        if key is None:
+            self.app._draw_cover_placeholder(self.cover_canvas, 320, "♪")
+            return
+
+        self.cover_image = cover_manager.load_cover_image(key, max_size=300)
+        if self.cover_image is not None:
+            self.cover_canvas.create_image(160, 160, image=self.cover_image)
+        else:
+            self.app._draw_cover_placeholder(self.cover_canvas, 320, "♪", accent=True)
+
+    def _draw_meta(self):
+        key = self.app.current_track_key
+        item = lib.get_item(key) if key else None
+
+        if item is None:
+            self.title_lbl.configure(text="No track loaded")
+            self.artist_lbl.configure(text="Pick a track to start playing")
+            for label in self.meta_labels.values():
+                label.configure(text="—")
+            self.lyrics_heading.configure(text="No track loaded")
+            self._set_lyrics_text("Pick a track to see its lyrics here.", placeholder=True)
+            return
+
+        album = item.album if isinstance(item, AlbumTrack) and item.album else "—"
+        year = item.year if isinstance(item, AlbumTrack) and item.year is not None else "—"
+
+        self.title_lbl.configure(text=item.name)
+        self.artist_lbl.configure(text=item.artist)
+        self.meta_labels["album"].configure(text=str(album))
+        self.meta_labels["year"].configure(text=str(year))
+        self.meta_labels["plays"].configure(text=str(item.play_count))
+        self.meta_labels["rating"].configure(text=item.stars())
+
+        self.lyrics_heading.configure(text=f"{item.name} — {item.artist}")
+        if item.lyrics:
+            self._set_lyrics_text(item.lyrics)
+        else:
+            self._set_lyrics_text(
+                "No lyrics yet. Open Manage → Lyrics tab to add some.",
+                placeholder=True,
+            )
+
+
+class LibraryPage:
+    def __init__(self, parent, app: JukeBoxApp):
+        self.app = app
+        self.cover_image = None
+        self.selected_key: str | None = None
+        self.frame = ttk.Frame(parent, style="Root.TFrame")
+        self.frame.columnconfigure(0, weight=3)
+        self.frame.columnconfigure(1, weight=2)
+        self.frame.rowconfigure(2, weight=1)
+        app.register_page("library", self)
+
+        self._build_header()
+        self._build_toolbar()
+        self._build_body()
+        self.refresh_tree()
+        self._show_empty_detail()
+
+    def _build_header(self):
+        header = ttk.Frame(self.frame, style="Root.TFrame")
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
+        header.columnconfigure(0, weight=1)
+
+        ttk.Label(header, text="Library", style="Hero.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(
+            header,
+            text="Browse, search and filter your entire track collection.",
+            style="Muted.TLabel",
+        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+
+    def _build_toolbar(self):
+        toolbar = ttk.Frame(self.frame, style="Card.TFrame", padding=14)
+        toolbar.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 14))
+        toolbar.columnconfigure(1, weight=1)
+
+        ttk.Label(toolbar, text="⌕", style="CardTitle.TLabel").grid(row=0, column=0, padx=(4, 10))
+
+        self.search_entry = ttk.Entry(toolbar)
+        self.search_entry.grid(row=0, column=1, sticky="ew")
+        self.search_entry.bind("<Return>", lambda e: self.apply_filters())
+        self.search_entry.bind("<KeyRelease>", lambda e: self.apply_filters())
+
+        ttk.Button(toolbar, text="Search", style="Neon.TButton", command=self.apply_filters).grid(
+            row=0, column=2, padx=(10, 0)
+        )
+
+        ttk.Label(toolbar, text="Rating", style="CardMuted.TLabel").grid(row=0, column=3, padx=(20, 6))
+
+        self.rating_filter = ttk.Combobox(
+            toolbar,
+            values=["Any", "0", "1", "2", "3", "4", "5"],
+            state="readonly",
+            width=5,
+        )
+        self.rating_filter.grid(row=0, column=4)
+        self.rating_filter.set("Any")
+        self.rating_filter.bind("<<ComboboxSelected>>", lambda e: self.apply_filters())
+
+        ttk.Button(
+            toolbar, text="Show All", style="Chip.TButton", command=self.reset_filters
+        ).grid(row=0, column=5, padx=(10, 0))
+
+    def _build_body(self):
+        table_card = ttk.Frame(self.frame, style="Card.TFrame", padding=16)
+        table_card.grid(row=2, column=0, sticky="nsew", padx=(0, 12))
+        table_card.columnconfigure(0, weight=1)
+        table_card.rowconfigure(1, weight=1)
+
+        th = ttk.Frame(table_card, style="Card.TFrame")
+        th.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        th.columnconfigure(0, weight=1)
+        ttk.Label(th, text="Tracks", style="CardTitle.TLabel").grid(row=0, column=0, sticky="w")
+        self.count_lbl = ttk.Label(th, text="0 track(s)", style="CardMuted.TLabel")
+        self.count_lbl.grid(row=0, column=1, sticky="e")
+
+        wrap = ttk.Frame(table_card, style="Card.TFrame")
+        wrap.grid(row=1, column=0, sticky="nsew")
+        wrap.columnconfigure(0, weight=1)
+        wrap.rowconfigure(0, weight=1)
+
+        columns = ("key", "title", "artist", "album", "year", "rating")
+        self.tree = ttk.Treeview(wrap, columns=columns, show="headings")
+
+        headings = {
+            "key": ("#", 50),
+            "title": ("Title", 220),
+            "artist": ("Artist", 160),
+            "album": ("Album", 150),
+            "year": ("Year", 70),
+            "rating": ("Rating", 100),
+        }
+        for col, (label, width) in headings.items():
+            self.tree.heading(col, text=label)
+            self.tree.column(col, width=width, anchor="w", stretch=True)
+
+        y = ttk.Scrollbar(wrap, orient="vertical", command=self.tree.yview)
+        x = ttk.Scrollbar(wrap, orient="horizontal", command=self.tree.xview)
+        self.tree.configure(yscrollcommand=y.set, xscrollcommand=x.set)
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        y.grid(row=0, column=1, sticky="ns")
+        x.grid(row=1, column=0, sticky="ew")
+
+        self.tree.bind("<<TreeviewSelect>>", self._on_select)
+        self.tree.bind("<Double-1>", self._on_double_click)
+
+        self._build_detail_card()
+
+    def _build_detail_card(self):
+        card = ttk.Frame(self.frame, style="Card.TFrame", padding=18)
+        card.grid(row=2, column=1, sticky="nsew")
+        card.columnconfigure(0, weight=1)
+
+        ttk.Label(card, text="Details", style="CardTitle.TLabel").grid(row=0, column=0, sticky="w")
+
+        self.cover_canvas = tk.Canvas(card, width=180, height=180)
+        fonts.style_canvas(self.cover_canvas, bg=fonts.CARD_ALT)
+        self.cover_canvas.grid(row=1, column=0, pady=(14, 16))
+
+        self.title_lbl = ttk.Label(
+            card,
+            text="No track selected",
+            style="CardTitle.TLabel",
+            wraplength=260,
+            justify="left",
+        )
+        self.title_lbl.grid(row=2, column=0, sticky="w")
+
+        self.artist_lbl = ttk.Label(card, text="—", style="CardMuted.TLabel", wraplength=260, justify="left")
+        self.artist_lbl.grid(row=3, column=0, sticky="w", pady=(4, 12))
+
+        self.meta_lbl = ttk.Label(
+            card,
+            text="Album: —\nYear: —\nPlays: —\nRating: —",
+            style="CardMuted.TLabel",
+            justify="left",
+        )
+        self.meta_lbl.grid(row=4, column=0, sticky="w")
+
+        action = ttk.Frame(card, style="Card.TFrame")
+        action.grid(row=5, column=0, sticky="ew", pady=(18, 0))
+        action.columnconfigure(0, weight=1)
+
+        ttk.Button(action, text="▶  Play", style="Neon.TButton", command=self._play_selected).grid(
+            row=0, column=0, sticky="ew"
+        )
+
+    # --- Data helpers ---
+
+    def refresh_tree(self, records: list[dict] | None = None):
+        data = records if records is not None else lib.get_track_records()
+        clear_tree(self.tree)
+        for rec in data:
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    rec["key"],
+                    rec["name"],
+                    rec["artist"],
+                    rec["album"] or "—",
+                    rec["year"] or "—",
+                    stars_text(rec["rating"]),
+                ),
+            )
+        self.count_lbl.configure(text=f"{len(data)} track(s)")
+
+    def on_library_change(self):
+        self.refresh_tree()
+        if self.selected_key and lib.get_item(self.selected_key) is not None:
+            self._show_detail(self.selected_key)
+        else:
+            self.selected_key = None
+            self._show_empty_detail()
+
+    def on_show(self):
+        self.refresh_tree()
+
+    def _show_detail(self, key: str):
+        item = lib.get_item(key)
+        if item is None:
+            self._show_empty_detail()
+            return
+
+        album = item.album if isinstance(item, AlbumTrack) and item.album else "—"
+        year = item.year if isinstance(item, AlbumTrack) and item.year is not None else "—"
+
+        self.title_lbl.configure(text=item.name)
+        self.artist_lbl.configure(text=item.artist)
+        self.meta_lbl.configure(
+            text=(
+                f"Album: {album}\n"
+                f"Year: {year}\n"
+                f"Plays: {item.play_count}\n"
+                f"Rating: {item.stars()}"
+            )
+        )
+
+        self.cover_canvas.delete("all")
+        self.cover_image = cover_manager.load_cover_image(key, max_size=170)
+        if self.cover_image is not None:
+            self.cover_canvas.create_image(90, 90, image=self.cover_image)
+        else:
+            self.app._draw_cover_placeholder(self.cover_canvas, 180, "♪", accent=True)
+
+    def _show_empty_detail(self):
+        self.cover_image = None
+        self.app._draw_cover_placeholder(self.cover_canvas, 180, "♪")
+        self.title_lbl.configure(text="No track selected")
+        self.artist_lbl.configure(text="Pick a row on the left")
+        self.meta_lbl.configure(text="Album: —\nYear: —\nPlays: —\nRating: —")
+
+    # --- Events ---
+
+    def _on_select(self, event=None):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        values = self.tree.item(sel[0], "values")
+        self.selected_key = values[0]
+        self._show_detail(values[0])
+
+    def _on_double_click(self, event=None):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        values = self.tree.item(sel[0], "values")
+        self.app.play_track(values[0])
+
+    def apply_filters(self):
+        keyword = self.search_entry.get().strip().lower()
+        rating_raw = self.rating_filter.get()
+        rating = None if rating_raw == "Any" else get_valid_rating(rating_raw, allow_zero=True)
+
+        records = []
+        for r in lib.get_track_records():
+            if keyword and not (
+                keyword in r["name"].lower()
+                or keyword in r["artist"].lower()
+                or keyword in (r["album"] or "").lower()
+            ):
+                continue
+            if rating is not None and r["rating"] != rating:
+                continue
+            records.append(r)
+
+        self.refresh_tree(records)
+
+    def reset_filters(self):
+        self.search_entry.delete(0, tk.END)
+        self.rating_filter.set("Any")
+        self.refresh_tree()
+
+    def _play_selected(self):
+        if self.selected_key is None:
+            return
+        self.app.play_track(self.selected_key)
+
+
+class ManagePage:
+    def __init__(self, parent, app: JukeBoxApp):
+        self.app = app
+        self.frame = ttk.Frame(parent, style="Root.TFrame")
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(1, weight=1)
+        app.register_page("manage", self)
+
+        self._build()
+
+    def _build(self):
+        header = ttk.Frame(self.frame, style="Root.TFrame")
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 14))
+        header.columnconfigure(0, weight=1)
+
+        ttk.Label(header, text="Manage Tracks", style="Hero.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(
+            header,
+            text="Add new tracks, update metadata or browse details.",
+            style="Muted.TLabel",
+        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+
+        notebook = ttk.Notebook(self.frame)
+        notebook.grid(row=1, column=0, sticky="nsew")
+
+        create_frame = ttk.Frame(notebook, style="Root.TFrame")
+        update_frame = ttk.Frame(notebook, style="Root.TFrame")
+        delete_frame = ttk.Frame(notebook, style="Root.TFrame")
+        lyrics_frame = ttk.Frame(notebook, style="Root.TFrame")
+
+        notebook.add(create_frame, text="   ✚  Create   ")
+        notebook.add(update_frame, text="   ✎  Update   ")
+        notebook.add(delete_frame, text="   ✕  Delete   ")
+        notebook.add(lyrics_frame, text="   ♬  Lyrics   ")
+
+        self.create_tool = AddRemoveTracks(create_frame, mode="add")
+        self.update_tool = UpdateTracks(update_frame)
+        self.delete_tool = AddRemoveTracks(delete_frame, mode="remove")
+        self.lyrics_tool = UpdateLyrics(lyrics_frame)
+
+        self.create_tool.app_ref = self.app
+        self.update_tool.app_ref = self.app
+        self.delete_tool.app_ref = self.app
+        self.lyrics_tool.app_ref = self.app
+
+    def on_library_change(self):
+        for tool in (self.create_tool, self.delete_tool):
+            if hasattr(tool, "refresh_list"):
+                tool.refresh_list()
+        if hasattr(self.update_tool, "list_tracks_clicked"):
+            self.update_tool.list_tracks_clicked()
+        if hasattr(self.lyrics_tool, "list_tracks_clicked"):
+            self.lyrics_tool.list_tracks_clicked()
+
+
+class PlaylistsPage:
+    def __init__(self, parent, app: JukeBoxApp):
+        self.app = app
+        self.frame = ttk.Frame(parent, style="Root.TFrame")
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(0, weight=1)
+        app.register_page("playlists", self)
+
+        self.tool = CreateTrackList(self.frame)
+
+    def on_library_change(self):
+        if hasattr(self.tool, "list_tracks_clicked"):
+            self.tool.list_tracks_clicked()
+
+
+class StatisticsPage:
+    def __init__(self, parent, app: JukeBoxApp):
+        self.app = app
+        self.frame = ttk.Frame(parent, style="Root.TFrame")
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(0, weight=1)
+        app.register_page("statistics", self)
+
+        self.tool = TrackStatistics(self.frame)
+
+    def on_show(self):
+        if hasattr(self.tool, "show_statistics_clicked"):
+            self.tool.show_statistics_clicked()
+
+    def on_library_change(self):
+        self.on_show()
 
 
 def main():

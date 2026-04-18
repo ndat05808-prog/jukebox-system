@@ -4,7 +4,7 @@ from tkinter import messagebox, simpledialog, ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import clear_tree, stars_text
+from .gui_helpers import clear_tree, setup_page_container, stars_text
 from .validation import get_valid_position, normalise_playlist_name, normalise_track_number
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +20,12 @@ class CreateTrackList:
         self.is_playing = False
         self.is_paused = False
 
-        window.geometry("1380x820")
-        window.minsize(1180, 740)
-        window.title("Playlist Builder")
-        fonts.apply_theme(window)
+        setup_page_container(
+            window,
+            title="Playlist Builder",
+            geometry="1380x820",
+            minsize=(1180, 740),
+        )
 
         window.columnconfigure(0, weight=3)
         window.columnconfigure(1, weight=2)

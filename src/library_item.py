@@ -4,11 +4,21 @@ from __future__ import annotations
 
 
 class LibraryItem:
-    def __init__(self, name: str, artist: str, rating: int = 0, play_count: int = 0):
+    def __init__(
+        self,
+        name: str,
+        artist: str,
+        rating: int = 0,
+        play_count: int = 0,
+        cover_path: str | None = None,
+        lyrics: str | None = None,
+    ):
         self.name = name.strip()
         self.artist = artist.strip()
         self.rating = 0
         self.play_count = 0
+        self.cover_path = cover_path or None
+        self.lyrics = lyrics or None
         self.set_rating(rating)
         self.set_play_count(play_count)
 
@@ -52,13 +62,18 @@ class LibraryItem:
         return keyword in self.name.lower() or keyword in self.artist.lower()
 
     def to_dict(self) -> dict:
-        return {
+        data = {
             "type": self.__class__.__name__,
             "name": self.name,
             "artist": self.artist,
             "rating": self.rating,
             "play_count": self.play_count,
         }
+        if self.cover_path:
+            data["cover_path"] = self.cover_path
+        if self.lyrics:
+            data["lyrics"] = self.lyrics
+        return data
 
     @classmethod
     def from_dict(cls, data: dict) -> "LibraryItem":
@@ -67,6 +82,8 @@ class LibraryItem:
             data.get("artist", "Unknown Artist"),
             data.get("rating", 0),
             data.get("play_count", 0),
+            data.get("cover_path"),
+            data.get("lyrics"),
         )
 
 
@@ -79,8 +96,10 @@ class AlbumTrack(LibraryItem):
         play_count: int = 0,
         album: str = "",
         year: int | None = None,
+        cover_path: str | None = None,
+        lyrics: str | None = None,
     ):
-        super().__init__(name, artist, rating, play_count)
+        super().__init__(name, artist, rating, play_count, cover_path, lyrics)
         self.album = album.strip()
         self.year = year
 
@@ -115,4 +134,6 @@ class AlbumTrack(LibraryItem):
             data.get("play_count", 0),
             data.get("album", ""),
             data.get("year"),
+            data.get("cover_path"),
+            data.get("lyrics"),
         )

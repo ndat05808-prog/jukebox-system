@@ -4,14 +4,14 @@
     "name": "What a Wonderful World",
     "artist": "Louis Armstrong",
     "rating": 5,
-    "play_count": 78
+    "play_count": 0
   },
   "02": {
     "type": "AlbumTrack",
     "name": "Here Comes the Sun",
     "artist": "The Beatles",
     "rating": 5,
-    "play_count": 34,
+    "play_count": 0,
     "album": "Abbey Road",
     "year": 1969
   },
@@ -20,159 +20,22 @@
     "name": "Count on Me",
     "artist": "Bruno Mars",
     "rating": 3,
-    "play_count": 38
+    "play_count": 0
   },
   "04": {
     "type": "AlbumTrack",
     "name": "Three Little Birds",
     "artist": "Bob Marley",
     "rating": 1,
-    "play_count": 38,
+    "play_count": 0,
     "album": "Exodus",
     "year": 1977
   },
   "05": {
-    "type": "AlbumTrack",
-    "name": "We Don’t Talk Anymore",
-    "artist": "Charlie Puth ft. Selena Gomez",
-    "rating": 5,
-    "play_count": 20,
-    "album": "Nine Track Mind",
-    "year": 2016
-  },
-  "06": {
-    "type": "AlbumTrack",
-    "name": "Hello",
-    "artist": "Lionel Richie",
+    "type": "LibraryItem",
+    "name": "You've Got a Friend",
+    "artist": "James Taylor",
     "rating": 3,
-    "play_count": 8,
-    "album": "Can't Slow Down.",
-    "year": 1984
-  },
-  "07": {
-    "type": "AlbumTrack",
-    "name": "Rolling in the Deep",
-    "artist": "Adele",
-    "rating": 1,
-    "play_count": 6,
-    "album": "21.",
-    "year": 2010
-  },
-  "08": {
-    "type": "AlbumTrack",
-    "name": "What Makes You Beautiful",
-    "artist": "One Direction",
-    "rating": 3,
-    "play_count": 6,
-    "album": "Up All Night",
-    "year": 2011
-  },
-  "09": {
-    "type": "AlbumTrack",
-    "name": "Stay with Me",
-    "artist": "Sam Smith",
-    "rating": 4,
-    "play_count": 5,
-    "album": "In the Lonely Hour",
-    "year": 2014
-  },
-  "10": {
-    "type": "AlbumTrack",
-    "name": "Photograph",
-    "artist": "Ed Sheeran",
-    "rating": 0,
-    "play_count": 5,
-    "album": "Multiply",
-    "year": 2015
-  },
-  "11": {
-    "type": "AlbumTrack",
-    "name": "Let Her Go",
-    "artist": "Passenger",
-    "rating": 3,
-    "play_count": 4,
-    "album": "All the Little Lights",
-    "year": 2012
-  },
-  "12": {
-    "type": "AlbumTrack",
-    "name": "Counting Stars",
-    "artist": "OneRepublic",
-    "rating": 2,
-    "play_count": 4,
-    "album": "Native",
-    "year": 2013
-  },
-  "13": {
-    "type": "AlbumTrack",
-    "name": "See You Again",
-    "artist": "Wiz Khalifa ft. Charlie Puth",
-    "rating": 4,
-    "play_count": 5,
-    "album": "Furious 7: Original Motion Picture Soundtrack",
-    "year": 2015
-  },
-  "14": {
-    "type": "AlbumTrack",
-    "name": "Love Story",
-    "artist": "Taylor Swift",
-    "rating": 5,
-    "play_count": 3,
-    "album": "Fearless",
-    "year": 2008
-  },
-  "15": {
-    "type": "AlbumTrack",
-    "name": "Shape of You",
-    "artist": "Ed Sheeran",
-    "rating": 3,
-    "play_count": 3,
-    "album": "÷ ( Divide )",
-    "year": 2017
-  },
-  "16": {
-    "type": "AlbumTrack",
-    "name": "Perfect",
-    "artist": "Ed Sheeran",
-    "rating": 1,
-    "play_count": 3,
-    "album": "÷ (Divide)",
-    "year": 2017
-  },
-  "17": {
-    "type": "AlbumTrack",
-    "name": "Someone Like You",
-    "artist": "Adele",
-    "rating": 0,
-    "play_count": 3,
-    "album": "21",
-    "year": 2011
-  },
-  "18": {
-    "type": "AlbumTrack",
-    "name": "Blinding Lights",
-    "artist": "The Weeknd",
-    "rating": 5,
-    "play_count": 3,
-    "album": "After Hours",
-    "year": 2019
-  },
-  "19": {
-    "type": "AlbumTrack",
-    "name": "As It Was",
-    "artist": "Harry Styles",
-    "rating": 0,
-    "play_count": 3,
-    "album": "Harry’s House",
-    "year": 2022
-  },
-  "20": {
-    "type": "AlbumTrack",
-    "name": "Shallow",
-    "artist": "Lady Gaga & Bradley Cooper",
-    "rating": 2,
-    "play_count": 4,
-    "album": "A Star Is Born",
-    "year": 2018
+    "play_count": 0
   }
 }

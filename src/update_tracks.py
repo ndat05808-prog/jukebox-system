@@ -1,22 +1,33 @@
 import tkinter as tk
-from tkinter import ttk
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
 
+from . import cover_manager as cover
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import clear_tree, set_text, stars_text
+from .gui_helpers import clear_tree, setup_page_container, stars_text
 from .library_item import AlbumTrack
 from .validation import get_valid_rating, get_valid_year, normalise_track_number
+
+COVER_FILETYPES = [
+    ("Image files", "*.png *.gif *.ppm *.pgm"),
+    ("PNG", "*.png"),
+    ("GIF", "*.gif"),
+    ("All files", "*.*"),
+]
 
 
 class UpdateTracks:
     def __init__(self, window):
         self.window = window
-        window.geometry("1280x820")
-        window.minsize(1120, 720)
-        window.title("Update Tracks")
-        fonts.apply_theme(window)
+        self.app_ref = None
+        setup_page_container(
+            window,
+            title="Update Tracks",
+            geometry="1280x820",
+            minsize=(1120, 720),
+        )
 
-        # Cập nhật: Đổi tỷ lệ chia cột từ 3:2 thành 2:1 để cột trái rộng hơn hẳn
         window.columnconfigure(0, weight=2, uniform="main_cols")
         window.columnconfigure(1, weight=1, uniform="main_cols")
         window.rowconfigure(2, weight=1)
@@ -54,7 +65,6 @@ class UpdateTracks:
         right = ttk.Frame(self.window, style="Root.TFrame")
         right.grid(row=2, column=1, sticky="nsew", padx=(10, 18), pady=10)
         right.columnconfigure(0, weight=1)
-        right.rowconfigure(1, weight=1)
 
         # ===== Load Track =====
         search_card = ttk.Frame(left, style="Card.TFrame", padding=18)
@@ -63,7 +73,7 @@ class UpdateTracks:
 
         ttk.Label(
             search_card,
-            text="Load Track",
+            text="Search Track",
             style="CardTitle.TLabel"
         ).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 12))
 
@@ -162,31 +172,42 @@ class UpdateTracks:
         self.rating_input.grid(row=6, column=0, sticky="ew", padx=(0, 10), pady=(6, 12))
         self.rating_input.set("0")
 
+        ttk.Label(form_card, text="Cover Image", style="Card.TLabel").grid(row=7, column=0, columnspan=2, sticky="w", pady=(4, 6))
+
+        cover_row = ttk.Frame(form_card, style="Card.TFrame")
+        cover_row.grid(row=8, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+        cover_row.columnconfigure(1, weight=1)
+
+        self.cover_preview = tk.Label(
+            cover_row,
+            bg=fonts.INPUT_BG,
+            width=10,
+            height=5,
+        )
+        self.cover_preview.grid(row=0, column=0, rowspan=2, sticky="nw", padx=(0, 12))
+
+        self.cover_name_lbl = ttk.Label(cover_row, text="No cover assigned.", style="Muted.TLabel")
+        self.cover_name_lbl.grid(row=0, column=1, sticky="w")
+
+        cover_btns = ttk.Frame(cover_row, style="Card.TFrame")
+        cover_btns.grid(row=1, column=1, sticky="ew", pady=(6, 0))
+        cover_btns.columnconfigure(0, weight=1)
+        cover_btns.columnconfigure(1, weight=1)
+
+        ttk.Button(cover_btns, text="Choose Image…", style="Ghost.TButton", command=self._choose_cover_clicked).grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        ttk.Button(cover_btns, text="Remove Cover", style="Ghost.TButton", command=self._clear_cover_clicked).grid(row=0, column=1, sticky="ew")
+
+        self.selected_cover_path: Path | None = None
+        self.clear_cover_on_save = False
+        self._preview_image = None
+
         ttk.Button(
             form_card,
             text="Update Track",
             style="Neon.TButton",
             command=self.update_track_clicked
-        ).grid(row=6, column=1, sticky="ew", pady=(6, 12))
+        ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
-        # ===== Preview =====
-        preview_card = ttk.Frame(right, style="Card.TFrame", padding=18)
-        preview_card.grid(row=1, column=0, sticky="nsew", pady=(14, 0))
-        preview_card.columnconfigure(0, weight=1)
-        preview_card.rowconfigure(1, weight=1)
-
-        ttk.Label(
-            preview_card,
-            text="Track Preview",
-            style="CardTitle.TLabel"
-        ).grid(row=0, column=0, sticky="w", pady=(0, 10))
-
-        # Đã giới hạn chiều rộng bằng width=1
-        self.track_txt = tk.Text(preview_card, height=24, width=1, wrap="word")
-        fonts.style_text_widget(self.track_txt)
-        self.track_txt.grid(row=1, column=0, sticky="nsew")
-
-        set_text(self.track_txt, "Select a track from the table or enter a track number to edit it.")
 
     def list_tracks_clicked(self):
         clear_tree(self.tree)
@@ -218,19 +239,78 @@ class UpdateTracks:
         for widget in (self.name_input, self.artist_input, self.album_input, self.year_input):
             widget.delete(0, tk.END)
         self.rating_input.set("0")
+        self.selected_cover_path = None
+        self.clear_cover_on_save = False
+        self._render_cover_preview(None, "No cover assigned.")
+
+    def _render_cover_preview(self, path: Path | None, empty_text: str = "No image selected."):
+        if path is None:
+            self._preview_image = None
+            self.cover_preview.configure(image="", width=10, height=5)
+            self.cover_name_lbl.configure(text=empty_text)
+            return
+        try:
+            image = tk.PhotoImage(file=str(path))
+        except tk.TclError:
+            self._preview_image = None
+            self.cover_preview.configure(image="", width=10, height=5)
+            self.cover_name_lbl.configure(text=f"Unsupported image: {path.name}")
+            return
+        largest = max(image.width(), image.height())
+        if largest > 80:
+            factor = max(1, (largest + 79) // 80)
+            image = image.subsample(factor, factor)
+        self._preview_image = image
+        self.cover_preview.configure(image=image, width=image.width(), height=image.height())
+        self.cover_name_lbl.configure(text=path.name)
+
+    def _choose_cover_clicked(self):
+        initial = str(cover.COVERS_DIR) if cover.COVERS_DIR.exists() else str(Path.home())
+        selected = filedialog.askopenfilename(
+            parent=self.window,
+            title="Choose cover image",
+            initialdir=initial,
+            filetypes=COVER_FILETYPES,
+        )
+        if not selected:
+            return
+        path = Path(selected)
+        if path.suffix.lower() not in cover.SUPPORTED_EXTENSIONS:
+            self.status_lbl.configure(text="Unsupported image format (use PNG, GIF, PPM, or PGM).")
+            return
+        self.selected_cover_path = path
+        self.clear_cover_on_save = False
+        self._render_cover_preview(path)
+        self.status_lbl.configure(text=f"Selected cover: {path.name} (will save on update).")
+
+    def _validation_error(self, message: str):
+        self.status_lbl.configure(text=message)
+        messagebox.showwarning("Cannot update track", message, parent=self.window)
+
+    def _notify_success(self, title: str, message: str):
+        self.status_lbl.configure(text=message)
+        messagebox.showinfo(title, message, parent=self.window)
+
+    def _notify_error(self, title: str, message: str):
+        self.status_lbl.configure(text=message)
+        messagebox.showerror(title, message, parent=self.window)
+
+    def _clear_cover_clicked(self):
+        self.selected_cover_path = None
+        self.clear_cover_on_save = True
+        self._render_cover_preview(None, "Cover will be removed on update.")
+        self.status_lbl.configure(text="Cover will be removed when you update the track.")
 
     def load_track_clicked(self):
         track_key = normalise_track_number(self.track_input.get())
         if track_key is None:
-            set_text(self.track_txt, "Track number must contain digits only.")
-            self.status_lbl.configure(text="Please enter digits only for the track number.")
+            self.status_lbl.configure(text="Track number must contain digits only.")
             return
 
         item = lib.get_item(track_key)
         if item is None:
             self._clear_form_only()
-            set_text(self.track_txt, f"Track {track_key} was not found.")
-            self.status_lbl.configure(text="That track number does not exist.")
+            self.status_lbl.configure(text=f"Track {track_key} was not found.")
             return
 
         self._clear_form_only()
@@ -247,53 +327,77 @@ class UpdateTracks:
             if item.year is not None:
                 self.year_input.insert(0, str(item.year))
 
-        set_text(self.track_txt, lib.get_details(track_key) or "")
+        existing_cover = cover.find_cover_path(track_key) if cover.has_custom_cover(track_key) else None
+        if existing_cover is not None:
+            self._render_cover_preview(existing_cover)
+            self.cover_name_lbl.configure(text=f"Current: {existing_cover.name}")
+        else:
+            self._render_cover_preview(None, "No cover assigned.")
+
         self.status_lbl.configure(text=f"Track {track_key} loaded successfully.")
 
     def update_track_clicked(self):
         track_key = normalise_track_number(self.track_input.get())
         if track_key is None:
-            set_text(self.track_txt, "Track number must contain digits only.")
-            self.status_lbl.configure(text="Please enter digits only for the track number.")
+            self._validation_error("Track number must contain digits only.")
             return
 
         if lib.get_name(track_key) is None:
-            set_text(self.track_txt, f"Track {track_key} was not found.")
-            self.status_lbl.configure(text="That track number does not exist.")
+            self._validation_error(f"Track {track_key} was not found.")
             return
 
         name = self.name_input.get().strip()
         artist = self.artist_input.get().strip()
 
         if name == "" or artist == "":
-            set_text(self.track_txt, "Name and artist cannot be empty.")
-            self.status_lbl.configure(text="Please enter both name and artist.")
+            self._validation_error("Please enter both name and artist.")
             return
 
         rating = get_valid_rating(self.rating_input.get(), allow_zero=True)
         if rating is None:
-            set_text(self.track_txt, "Rating must be a whole number from 0 to 5.")
-            self.status_lbl.configure(text="Please enter a rating between 0 and 5.")
+            self._validation_error("Rating must be a whole number from 0 to 5.")
             return
 
         year_text = self.year_input.get().strip()
         year = get_valid_year(year_text)
         if year_text != "" and year is None:
-            set_text(self.track_txt, "Year must be between 1900 and 2100, or left blank.")
-            self.status_lbl.configure(text="Year must be between 1900 and 2100, or left blank.")
+            self._validation_error("Year must be a four-digit number between 1900 and 2100, or left blank.")
             return
 
         album = self.album_input.get().strip()
 
         success = lib.update_track_info(track_key, name, artist, rating, album=album, year=year)
         if not success:
-            set_text(self.track_txt, "The track could not be updated.")
-            self.status_lbl.configure(text="Update failed. The file may not have been saved.")
+            self._notify_error("Update failed", "Track could not be updated. The library file may not have been saved.")
             return
 
-        set_text(self.track_txt, lib.get_details(track_key) or "")
+        lib.add_history_entry(track_key, source="manage", action="update")
+
+        cover_status = ""
+        if self.selected_cover_path is not None:
+            saved = cover.assign_cover_image(track_key, self.selected_cover_path)
+            cover_status = " Cover saved." if saved is not None else " (Cover could not be saved.)"
+            self.selected_cover_path = None
+        elif self.clear_cover_on_save:
+            cover.remove_cover_image(track_key)
+            self.clear_cover_on_save = False
+            cover_status = " Cover removed."
+
+        existing_cover = cover.find_cover_path(track_key) if cover.has_custom_cover(track_key) else None
+        if existing_cover is not None:
+            self._render_cover_preview(existing_cover)
+            self.cover_name_lbl.configure(text=f"Current: {existing_cover.name}")
+        else:
+            self._render_cover_preview(None, "No cover assigned.")
+
         self.list_tracks_clicked()
-        self.status_lbl.configure(text=f"Track {track_key} was updated successfully.")
+        self._notify_success(
+            "Track updated",
+            f"Track {track_key}: '{name}' by {artist} was updated successfully.{cover_status}",
+        )
+
+        if self.app_ref is not None:
+            self.app_ref.refresh_library()
 
 
 if __name__ == "__main__":

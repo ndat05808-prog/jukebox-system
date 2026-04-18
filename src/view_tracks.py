@@ -4,7 +4,7 @@ from tkinter import ttk
 from . import cover_manager
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import clear_tree, stars_text
+from .gui_helpers import clear_tree, setup_page_container, stars_text
 from .library_item import AlbumTrack
 from .validation import get_valid_rating, normalise_track_number
 
@@ -14,10 +14,12 @@ class TrackViewer:
         self.window = window
         self.cover_image = None
 
-        window.geometry("1280x820")
-        window.minsize(1120, 720)
-        window.title("View Tracks")
-        fonts.apply_theme(window)
+        setup_page_container(
+            window,
+            title="View Tracks",
+            geometry="1280x820",
+            minsize=(1120, 720),
+        )
 
         window.columnconfigure(0, weight=3, uniform="main_cols")
         window.columnconfigure(1, weight=1, uniform="main_cols")
@@ -54,8 +56,8 @@ class TrackViewer:
         toolbar_card = ttk.Frame(self.window, style="Card.TFrame", padding=14)
         toolbar_card.grid(row=1, column=0, columnspan=2, sticky="ew", padx=18, pady=10)
 
-        for i in range(6):
-            toolbar_card.columnconfigure(i, weight=1)
+        toolbar_card.columnconfigure(0, weight=3)
+        toolbar_card.columnconfigure(2, weight=1)
 
         self.search_txt = ttk.Entry(toolbar_card)
         self.search_txt.grid(row=0, column=0, sticky="ew", padx=(0, 8))
@@ -81,18 +83,7 @@ class TrackViewer:
             text="Filter Rating",
             style="Ghost.TButton",
             command=self.filter_by_score_clicked
-        ).grid(row=0, column=3, sticky="ew", padx=8)
-
-        self.input_txt = ttk.Entry(toolbar_card)
-        self.input_txt.grid(row=0, column=4, sticky="ew", padx=8)
-        self.input_txt.bind("<Return>", lambda event: self.view_track_clicked())
-
-        ttk.Button(
-            toolbar_card,
-            text="View Details",
-            style="Ghost.TButton",
-            command=self.view_track_clicked
-        ).grid(row=0, column=5, sticky="ew", padx=(8, 0))
+        ).grid(row=0, column=3, sticky="ew", padx=(8, 0))
 
     def _build_main_panels(self):
         left = ttk.Frame(self.window, style="Root.TFrame")
@@ -240,8 +231,6 @@ class TrackViewer:
             return
 
         values = self.tree.item(selected[0], "values")
-        self.input_txt.delete(0, tk.END)
-        self.input_txt.insert(0, values[0])
         self.show_track(values[0])
 
     def display_empty_state(self):
@@ -345,9 +334,6 @@ class TrackViewer:
 
         self._set_detail_text("\n".join(detail_lines))
         self.status_lbl.configure(text=f"Showing details for track {track_key}.")
-
-    def view_track_clicked(self):
-        self.show_track(self.input_txt.get())
 
     def list_tracks_clicked(self):
         self._populate_tree(lib.get_track_records())

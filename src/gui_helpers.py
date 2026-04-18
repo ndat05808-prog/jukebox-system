@@ -4,6 +4,17 @@ from tkinter import ttk
 from . import font_manager as fonts
 
 
+def setup_page_container(parent, title: str = "", geometry: str = "", minsize: tuple | None = None):
+    if isinstance(parent, (tk.Tk, tk.Toplevel)):
+        if title:
+            parent.title(title)
+        if geometry:
+            parent.geometry(geometry)
+        if minsize:
+            parent.minsize(*minsize)
+        fonts.apply_theme(parent)
+
+
 def set_text(text_area, content: str):
     text_area.configure(state="normal")
     text_area.delete("1.0", tk.END)

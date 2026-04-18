@@ -1,0 +1,10 @@
+{
+  "123": {
+    "username": "123",
+    "display_name": "123",
+    "salt": "2c38f1abdadab2bcb01454df478369ed",
+    "password_hash": "ec3516c48890a70ab3c791fba7c1f157f77acefafdb523a07fb2ccbc79546820",
+    "created_at": "2026-04-18 21:39:31",
+    "last_login": "2026-04-18 21:42:52"
+  }
+}

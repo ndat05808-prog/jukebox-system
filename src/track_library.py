@@ -150,16 +150,26 @@ def save_history(history: list[dict]) -> bool:
         return False
 
 
-def add_history_entry(track_key: str, source: str = "playlist") -> bool:
-    item = get_item(track_key)
-    if item is None:
-        return False
+def add_history_entry(
+    track_key: str,
+    source: str = "playlist",
+    name: str | None = None,
+    artist: str | None = None,
+    action: str = "play",
+) -> bool:
+    if name is None or artist is None:
+        item = get_item(track_key)
+        if item is None:
+            return False
+        name = item.name
+        artist = item.artist
     history = load_history()
     history.append(
         {
             "track_key": track_key,
-            "name": item.name,
-            "artist": item.artist,
+            "name": name,
+            "artist": artist,
+            "action": action,
             "played_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "source": source,
         }
@@ -169,6 +179,24 @@ def add_history_entry(track_key: str, source: str = "playlist") -> bool:
 
 def clear_history() -> bool:
     return save_history([])
+
+
+def set_cover_path(key: str, cover_path: str | None) -> bool:
+    item = library.get(key)
+    if item is None:
+        return False
+    item.cover_path = cover_path or None
+    return save_library()
+
+
+def set_lyrics(key: str, lyrics: str | None) -> bool:
+    item = library.get(key)
+    if item is None:
+        return False
+    if lyrics is not None:
+        lyrics = lyrics.strip()
+    item.lyrics = lyrics or None
+    return save_library()
 
 
 def all_keys() -> list[str]:
@@ -248,11 +276,13 @@ def update_track_info(
         return False
     old_item = item
     play_count = item.play_count
+    cover_path = item.cover_path
+    lyrics = item.lyrics
     should_be_album_track = isinstance(item, AlbumTrack) or album != "" or year is not None
     if should_be_album_track:
-        new_item = AlbumTrack(name, artist, rating, play_count, album, year)
+        new_item = AlbumTrack(name, artist, rating, play_count, album, year, cover_path, lyrics)
     else:
-        new_item = LibraryItem(name, artist, rating, play_count)
+        new_item = LibraryItem(name, artist, rating, play_count, cover_path, lyrics)
     library[key] = new_item
     if auto_save and not save_library():
         library[key] = old_item

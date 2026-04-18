@@ -3,18 +3,19 @@ from tkinter import messagebox, ttk
 
 from . import font_manager as fonts
 from . import track_library as lib
-from .gui_helpers import create_metric_card, draw_bar_chart, set_text
+from .gui_helpers import create_metric_card, draw_bar_chart, set_text, setup_page_container
 
 
 class TrackStatistics:
     def __init__(self, window):
         self.window = window
-        window.geometry("1420x820")
-        window.minsize(1220, 760)
-        window.title("Track Statistics")
-        fonts.apply_theme(window)
+        setup_page_container(
+            window,
+            title="Track Statistics",
+            geometry="1420x820",
+            minsize=(1220, 760),
+        )
 
-        # Cập nhật: Ép tỷ lệ 2:1 tuyệt đối cho cột trái và phải
         window.columnconfigure(0, weight=2, uniform="main_cols")
         window.columnconfigure(1, weight=1, uniform="main_cols")
         window.rowconfigure(3, weight=1)
@@ -265,7 +266,8 @@ class TrackStatistics:
                 f"{entry.get('track_key', '--')} - "
                 f"{entry.get('name', 'Unknown Track')} by "
                 f"{entry.get('artist', 'Unknown Artist')} "
-                f"(source: {entry.get('source', 'unknown')})"
+                f"(action: {entry.get('action', 'play')}, "
+                f"source: {entry.get('source', 'unknown')})"
             )
 
         set_text(self.stats_txt, "\n".join(lines))
