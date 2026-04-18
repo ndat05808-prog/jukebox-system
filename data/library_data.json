@@ -4,14 +4,17 @@
     "name": "What a Wonderful World",
     "artist": "Louis Armstrong",
     "rating": 5,
-    "play_count": 0
+    "play_count": 7,
+    "cover_path": "assets\\covers\\01.png",
+    "lyrics": "ANh yêu Em"
   },
   "02": {
     "type": "AlbumTrack",
     "name": "Here Comes the Sun",
     "artist": "The Beatles",
     "rating": 5,
-    "play_count": 0,
+    "play_count": 3,
+    "cover_path": "assets\\covers\\02.png",
     "album": "Abbey Road",
     "year": 1969
   },
@@ -20,14 +23,16 @@
     "name": "Count on Me",
     "artist": "Bruno Mars",
     "rating": 3,
-    "play_count": 0
+    "play_count": 3,
+    "cover_path": "assets\\covers\\03.png"
   },
   "04": {
     "type": "AlbumTrack",
     "name": "Three Little Birds",
     "artist": "Bob Marley",
     "rating": 1,
-    "play_count": 0,
+    "play_count": 3,
+    "cover_path": "assets\\covers\\04.png",
     "album": "Exodus",
     "year": 1977
   },
@@ -36,6 +41,8 @@
     "name": "You've Got a Friend",
     "artist": "James Taylor",
     "rating": 3,
-    "play_count": 0
+    "play_count": 5,
+    "cover_path": "assets\\covers\\05.png",
+    "lyrics": "tgyhujikl;"
   }
 }
