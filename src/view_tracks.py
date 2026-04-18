@@ -19,12 +19,10 @@ class TrackViewer:
         window.title("View Tracks")
         fonts.apply_theme(window)
 
-        # Cập nhật: Ép tỷ lệ 3:1 tuyệt đối để khung Library rộng ra nhiều nhất có thể
         window.columnconfigure(0, weight=3, uniform="main_cols")
         window.columnconfigure(1, weight=1, uniform="main_cols")
         window.rowconfigure(2, weight=1)
 
-        # Header riêng để không bị chồng chữ
         header = ttk.Frame(window, style="Root.TFrame")
         header.grid(row=0, column=0, columnspan=2, sticky="ew", padx=18, pady=(18, 8))
         header.columnconfigure(0, weight=1)
@@ -47,6 +45,8 @@ class TrackViewer:
         self.status_lbl = ttk.Label(window, text="Ready.", style="Status.TLabel")
         self.status_lbl.grid(row=3, column=0, columnspan=2, sticky="w", padx=18, pady=(0, 16))
 
+        self.window.bind("<Configure>", self._on_resize)
+
         self.list_tracks_clicked()
         self.display_empty_state()
 
@@ -57,7 +57,6 @@ class TrackViewer:
         for i in range(6):
             toolbar_card.columnconfigure(i, weight=1)
 
-        # Search
         self.search_txt = ttk.Entry(toolbar_card)
         self.search_txt.grid(row=0, column=0, sticky="ew", padx=(0, 8))
         self.search_txt.bind("<Return>", lambda event: self.search_tracks_clicked())
@@ -69,7 +68,6 @@ class TrackViewer:
             command=self.search_tracks_clicked
         ).grid(row=0, column=1, sticky="ew", padx=8)
 
-        # Filter by rating
         self.rating_filter_txt = ttk.Combobox(
             toolbar_card,
             values=["0", "1", "2", "3", "4", "5"],
@@ -85,7 +83,6 @@ class TrackViewer:
             command=self.filter_by_score_clicked
         ).grid(row=0, column=3, sticky="ew", padx=8)
 
-        # View details by manual track number
         self.input_txt = ttk.Entry(toolbar_card)
         self.input_txt.grid(row=0, column=4, sticky="ew", padx=8)
         self.input_txt.bind("<Return>", lambda event: self.view_track_clicked())
@@ -108,7 +105,6 @@ class TrackViewer:
         right.columnconfigure(0, weight=1)
         right.rowconfigure(0, weight=1)
 
-        # ===== Library card =====
         library_card = ttk.Frame(left, style="Card.TFrame", padding=18)
         library_card.grid(row=0, column=0, sticky="nsew")
         library_card.columnconfigure(0, weight=1)
@@ -165,40 +161,62 @@ class TrackViewer:
 
         self.tree.bind("<<TreeviewSelect>>", self._select_track_from_tree)
 
-        # ===== Selected Track card =====
-        detail_card = ttk.Frame(right, style="Card.TFrame", padding=18)
-        detail_card.grid(row=0, column=0, sticky="nsew")
-        detail_card.columnconfigure(0, weight=1)
-        detail_card.rowconfigure(3, weight=1)
+        self.detail_card = ttk.Frame(right, style="Card.TFrame", padding=18)
+        self.detail_card.grid(row=0, column=0, sticky="nsew")
+        self.detail_card.columnconfigure(0, weight=1)
+        self.detail_card.rowconfigure(3, weight=1)
 
         ttk.Label(
-            detail_card,
+            self.detail_card,
             text="Selected Track",
             style="CardTitle.TLabel"
         ).grid(row=0, column=0, sticky="w", pady=(0, 10))
 
-        self.cover_canvas = tk.Canvas(detail_card, width=260, height=260)
+        self.cover_canvas = tk.Canvas(self.detail_card, width=200, height=200)
         fonts.style_canvas(self.cover_canvas)
-        self.cover_canvas.grid(row=1, column=0, sticky="ew", pady=(0, 14))
+        self.cover_canvas.grid(row=1, column=0, sticky="ew", pady=(0, 12))
 
         self.title_lbl = ttk.Label(
-            detail_card,
+            self.detail_card,
             text="No Track Selected",
             style="CardTitle.TLabel",
-            justify="left"
+            justify="left",
+            wraplength=260
         )
-        self.title_lbl.grid(row=2, column=0, sticky="w", pady=(0, 10))
+        self.title_lbl.grid(row=2, column=0, sticky="w", pady=(0, 8))
 
-        # Cập nhật: Thêm width=1 để nó không chiếm không gian của cột trái
-        self.detail_text = tk.Text(detail_card, height=14, width=1, wrap="word")
-        fonts.style_text_widget(self.detail_text)
-        self.detail_text.grid(row=3, column=0, sticky="nsew")
+        self.detail_message = tk.Message(
+            self.detail_card,
+            text="Choose a track number or click a row to see details.",
+            width=280,
+            justify="left",
+            anchor="nw",
+            bg=fonts.INPUT_BG,
+            fg=fonts.TEXT,
+            font=("Segoe UI", 10),
+            relief="flat",
+            borderwidth=1,
+            highlightthickness=1,
+            highlightbackground=fonts.BORDER,
+            highlightcolor=fonts.ACCENT,
+            padx=10,
+            pady=10,
+        )
+        self.detail_message.grid(row=3, column=0, sticky="nsew")
+
+    def _on_resize(self, event=None):
+        if event is not None and event.widget is not self.window:
+            return
+
+        if not hasattr(self, "detail_card"):
+            return
+
+        width = max(240, self.detail_card.winfo_width() - 50)
+        self.title_lbl.configure(wraplength=width)
+        self.detail_message.configure(width=max(220, width - 20))
 
     def _set_detail_text(self, text: str):
-        self.detail_text.configure(state="normal")
-        self.detail_text.delete("1.0", tk.END)
-        self.detail_text.insert("1.0", text)
-        self.detail_text.configure(state="disabled")
+        self.detail_message.configure(text=text)
 
     def _populate_tree(self, records):
         clear_tree(self.tree)
@@ -230,24 +248,24 @@ class TrackViewer:
         self.cover_image = None
         self.cover_canvas.delete("all")
         self.cover_canvas.create_rectangle(
-            20, 20, 240, 240,
+            16, 16, 184, 184,
             outline=fonts.BORDER,
             width=2,
             fill=fonts.CARD_ALT
         )
         self.cover_canvas.create_text(
-            130, 120,
+            100, 88,
             text="No Track Selected",
             fill=fonts.TEXT,
             font=("Segoe UI", 13, "bold"),
-            width=160
+            width=140
         )
         self.cover_canvas.create_text(
-            130, 175,
+            100, 138,
             text="Select a track from the table to preview it.",
             fill=fonts.MUTED,
             font=("Segoe UI", 10),
-            width=170
+            width=145
         )
 
         self.title_lbl.configure(text="No Track Selected")
@@ -258,38 +276,38 @@ class TrackViewer:
         artist_name = lib.get_artist(track_key) or "Unknown Artist"
 
         self.cover_canvas.delete("all")
-        self.cover_image = cover_manager.load_cover_image(track_key, max_size=210)
+        self.cover_image = cover_manager.load_cover_image(track_key, max_size=170)
 
         if self.cover_image is not None:
-            self.cover_canvas.create_image(130, 130, image=self.cover_image)
+            self.cover_canvas.create_image(100, 100, image=self.cover_image)
             return
 
         self.cover_canvas.create_rectangle(
-            20, 20, 240, 240,
+            16, 16, 184, 184,
             outline=fonts.ACCENT,
             width=2,
             fill=fonts.CARD_ALT
         )
         self.cover_canvas.create_text(
-            130, 100,
+            100, 78,
             text=track_name,
             fill=fonts.TEXT,
             font=("Segoe UI", 13, "bold"),
-            width=170
+            width=140
         )
         self.cover_canvas.create_text(
-            130, 145,
+            100, 116,
             text=artist_name,
             fill=fonts.ACCENT,
             font=("Segoe UI", 11),
-            width=170
+            width=140
         )
         self.cover_canvas.create_text(
-            130, 190,
+            100, 154,
             text="No cover image found.",
             fill=fonts.MUTED,
             font=("Segoe UI", 10),
-            width=170
+            width=140
         )
 
     def show_track(self, track_key: str):

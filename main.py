@@ -1,4 +1,4 @@
-from src.track_player import main
+from src.auth_ui import launch_auth_app
 
 if __name__ == "__main__":
-    main()
+    launch_auth_app()
