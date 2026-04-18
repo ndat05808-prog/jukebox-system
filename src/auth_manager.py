@@ -13,8 +13,8 @@ DATA_DIR.mkdir(exist_ok=True)
 
 USERS_FILE = DATA_DIR / "users.json"
 
-DEFAULT_USERNAME = "123"
-DEFAULT_PASSWORD = "123"
+DEFAULT_USERNAME = "td123"
+DEFAULT_PASSWORD = "td456"
 
 
 def _now_text() -> str:
