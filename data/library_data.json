@@ -4,14 +4,14 @@
     "name": "What a Wonderful World",
     "artist": "Louis Armstrong",
     "rating": 5,
-    "play_count": 67
+    "play_count": 78
   },
   "02": {
     "type": "AlbumTrack",
     "name": "Here Comes the Sun",
     "artist": "The Beatles",
     "rating": 5,
-    "play_count": 33,
+    "play_count": 34,
     "album": "Abbey Road",
     "year": 1969
   },
@@ -20,14 +20,14 @@
     "name": "Count on Me",
     "artist": "Bruno Mars",
     "rating": 3,
-    "play_count": 37
+    "play_count": 38
   },
   "04": {
     "type": "AlbumTrack",
     "name": "Three Little Birds",
     "artist": "Bob Marley",
     "rating": 1,
-    "play_count": 37,
+    "play_count": 38,
     "album": "Exodus",
     "year": 1977
   },
@@ -36,7 +36,7 @@
     "name": "We Don’t Talk Anymore",
     "artist": "Charlie Puth ft. Selena Gomez",
     "rating": 5,
-    "play_count": 19,
+    "play_count": 20,
     "album": "Nine Track Mind",
     "year": 2016
   },
@@ -45,7 +45,7 @@
     "name": "Hello",
     "artist": "Lionel Richie",
     "rating": 3,
-    "play_count": 7,
+    "play_count": 8,
     "album": "Can't Slow Down.",
     "year": 1984
   },
@@ -54,7 +54,7 @@
     "name": "Rolling in the Deep",
     "artist": "Adele",
     "rating": 1,
-    "play_count": 5,
+    "play_count": 6,
     "album": "21.",
     "year": 2010
   },
@@ -63,7 +63,7 @@
     "name": "What Makes You Beautiful",
     "artist": "One Direction",
     "rating": 3,
-    "play_count": 5,
+    "play_count": 6,
     "album": "Up All Night",
     "year": 2011
   },
@@ -72,7 +72,7 @@
     "name": "Stay with Me",
     "artist": "Sam Smith",
     "rating": 4,
-    "play_count": 4,
+    "play_count": 5,
     "album": "In the Lonely Hour",
     "year": 2014
   },
@@ -81,7 +81,7 @@
     "name": "Photograph",
     "artist": "Ed Sheeran",
     "rating": 0,
-    "play_count": 4,
+    "play_count": 5,
     "album": "Multiply",
     "year": 2015
   },
