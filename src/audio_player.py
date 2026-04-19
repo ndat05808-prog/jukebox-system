@@ -22,12 +22,14 @@ def available() -> bool:
 def _ensure_init() -> bool:
     global _initialised
     if pygame is None:
+        print("ERROR: pygame is not installed.")
         return False
     if _initialised:
         return True
     try:
         pygame.mixer.init()
-    except pygame.error:
+    except Exception as e:
+        print("MIXER INIT ERROR:", e)
         return False
     _initialised = True
     return True
@@ -50,14 +52,20 @@ def load_and_play(path: Path | str) -> bool:
     global _current_path, _duration_seconds, _paused
     if not _ensure_init():
         return False
+
     src = Path(path)
     if not src.is_file():
+        print("FILE NOT FOUND:", src)
         return False
+
     try:
+        print("TRYING TO PLAY:", src)
         pygame.mixer.music.load(str(src))
         pygame.mixer.music.play()
-    except pygame.error:
+    except Exception as e:
+        print("PLAYBACK ERROR:", src, e)
         return False
+
     _current_path = src
     _duration_seconds = _probe_duration(src)
     _paused = False

@@ -4,7 +4,9 @@
     "name": "What a Wonderful World",
     "artist": "Louis Armstrong",
     "rating": 5,
-    "play_count": 0
+    "play_count": 0,
+    "cover_path": "assets\\covers\\01.png",
+    "audio_path": "assets\\audio\\01.mp3"
   },
   "02": {
     "type": "AlbumTrack",
@@ -12,6 +14,8 @@
     "artist": "The Beatles",
     "rating": 5,
     "play_count": 0,
+    "cover_path": "assets\\covers\\02.png",
+    "audio_path": "assets\\audio\\02.mp3",
     "album": "Abbey Road",
     "year": 1969
   },
@@ -20,7 +24,9 @@
     "name": "Count on Me",
     "artist": "Bruno Mars",
     "rating": 3,
-    "play_count": 0
+    "play_count": 0,
+    "cover_path": "assets\\covers\\03.png",
+    "audio_path": "assets\\audio\\03.mp3"
   },
   "04": {
     "type": "AlbumTrack",
@@ -28,6 +34,8 @@
     "artist": "Bob Marley",
     "rating": 1,
     "play_count": 0,
+    "cover_path": "assets\\covers\\04.png",
+    "audio_path": "assets\\audio\\04.mp3",
     "album": "Exodus",
     "year": 1977
   },
@@ -36,6 +44,9 @@
     "name": "You've Got a Friend",
     "artist": "James Taylor",
     "rating": 3,
-    "play_count": 0
+    "play_count": 0,
+    "cover_path": "assets\\covers\\05.png",
+    "lyrics": "anh yeu em",
+    "audio_path": "assets\\audio\\05.mp3"
   }
 }
