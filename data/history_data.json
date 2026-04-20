@@ -238,5 +238,557 @@
     "action": "create",
     "played_at": "2026-04-19 15:28:03",
     "source": "manage"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-19 16:56:56",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "20",
+    "name": "Shallow",
+    "artist": "Lady Gaga & Bradley Cooper",
+    "action": "play",
+    "played_at": "2026-04-19 16:57:00",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "20",
+    "name": "Shallow",
+    "artist": "Lady Gaga & Bradley Cooper",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 16:57:37",
+    "source": "manage"
+  },
+  {
+    "track_key": "20",
+    "name": "Shallow",
+    "artist": "Lady Gaga & Bradley Cooper",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 16:58:47",
+    "source": "manage"
+  },
+  {
+    "track_key": "14",
+    "name": "Love Story",
+    "artist": "Taylor Swift",
+    "action": "play",
+    "played_at": "2026-04-19 16:59:10",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "20",
+    "name": "Shallow",
+    "artist": "Lady Gaga & Bradley Cooper",
+    "action": "play",
+    "played_at": "2026-04-19 16:59:14",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "19",
+    "name": "As It Was",
+    "artist": "Harry Styles",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 16:59:58",
+    "source": "manage"
+  },
+  {
+    "track_key": "19",
+    "name": "As It Was",
+    "artist": "Harry Styles",
+    "action": "play",
+    "played_at": "2026-04-19 17:00:04",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "18",
+    "name": "Blinding Lights",
+    "artist": "The Weeknd",
+    "action": "clear_lyrics",
+    "played_at": "2026-04-19 17:02:16",
+    "source": "manage"
+  },
+  {
+    "track_key": "18",
+    "name": "Blinding Lights",
+    "artist": "The Weeknd",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:02:20",
+    "source": "manage"
+  },
+  {
+    "track_key": "17",
+    "name": "Someone Like You",
+    "artist": "Adele",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:02:45",
+    "source": "manage"
+  },
+  {
+    "track_key": "18",
+    "name": "Blinding Lights",
+    "artist": "The Weeknd",
+    "action": "play",
+    "played_at": "2026-04-19 17:02:51",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "15",
+    "name": "Shape of You",
+    "artist": "Ed Sheeran",
+    "action": "play",
+    "played_at": "2026-04-19 17:02:59",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "16",
+    "name": "Perfect",
+    "artist": "Ed Sheeran",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:03:34",
+    "source": "manage"
+  },
+  {
+    "track_key": "15",
+    "name": "Shape of You",
+    "artist": "Ed Sheeran",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:04:18",
+    "source": "manage"
+  },
+  {
+    "track_key": "14",
+    "name": "Love Story",
+    "artist": "Taylor Swift",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:04:48",
+    "source": "manage"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:05:21",
+    "source": "manage"
+  },
+  {
+    "track_key": "12",
+    "name": "Counting Stars",
+    "artist": "OneRepublic",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:06:35",
+    "source": "manage"
+  },
+  {
+    "track_key": "11",
+    "name": "Let Her Go",
+    "artist": "Passenger",
+    "action": "play",
+    "played_at": "2026-04-19 17:07:30",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-19 17:07:43",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "11",
+    "name": "Let Her Go",
+    "artist": "Passenger",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:07:58",
+    "source": "manage"
+  },
+  {
+    "track_key": "10",
+    "name": "Photograph",
+    "artist": "Ed Sheeran",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:09:14",
+    "source": "manage"
+  },
+  {
+    "track_key": "09",
+    "name": "Stay With Me",
+    "artist": "Sam Smith",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:10:31",
+    "source": "manage"
+  },
+  {
+    "track_key": "12",
+    "name": "Counting Stars",
+    "artist": "OneRepublic",
+    "action": "clear_lyrics",
+    "played_at": "2026-04-19 17:11:42",
+    "source": "manage"
+  },
+  {
+    "track_key": "12",
+    "name": "Counting Stars",
+    "artist": "OneRepublic",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:11:46",
+    "source": "manage"
+  },
+  {
+    "track_key": "07",
+    "name": "Rolling in the Deep",
+    "artist": "Adele",
+    "action": "play",
+    "played_at": "2026-04-19 17:12:02",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "08",
+    "name": "Counting Stars",
+    "artist": "OneRepublic",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:12:21",
+    "source": "manage"
+  },
+  {
+    "track_key": "07",
+    "name": "Rolling in the Deep",
+    "artist": "Adele",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:13:10",
+    "source": "manage"
+  },
+  {
+    "track_key": "06",
+    "name": "Hello",
+    "artist": "Adele",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:13:43",
+    "source": "manage"
+  },
+  {
+    "track_key": "05",
+    "name": "You've Got a Friend",
+    "artist": "James Taylor",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:14:20",
+    "source": "manage"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:14:53",
+    "source": "manage"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:15:21",
+    "source": "manage"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:15:50",
+    "source": "manage"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 17:16:18",
+    "source": "manage"
+  },
+  {
+    "track_key": "06",
+    "name": "Hello",
+    "artist": "Adele",
+    "action": "play",
+    "played_at": "2026-04-19 20:43:37",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "20",
+    "name": "Shallow",
+    "artist": "Lady Gaga & Bradley Cooper",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 20:46:00",
+    "source": "manage"
+  },
+  {
+    "track_key": "20",
+    "name": "Shallow",
+    "artist": "Lady Gaga & Bradley Cooper",
+    "action": "play",
+    "played_at": "2026-04-19 20:46:23",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "20",
+    "name": "Shallow",
+    "artist": "Lady Gaga & Bradley Cooper",
+    "action": "play",
+    "played_at": "2026-04-19 20:46:25",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "20",
+    "name": "Shallow",
+    "artist": "Lady Gaga & Bradley Cooper",
+    "action": "update_lyrics",
+    "played_at": "2026-04-19 20:46:46",
+    "source": "manage"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-19 20:47:19",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "action": "play",
+    "played_at": "2026-04-19 20:47:21",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "action": "play",
+    "played_at": "2026-04-19 20:47:26",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "play",
+    "played_at": "2026-04-19 20:47:30",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "05",
+    "name": "You've Got a Friend",
+    "artist": "James Taylor",
+    "action": "play",
+    "played_at": "2026-04-19 20:47:32",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Hello",
+    "artist": "Adele",
+    "action": "play",
+    "played_at": "2026-04-20 14:20:50",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "07",
+    "name": "Rolling in the Deep",
+    "artist": "Adele",
+    "action": "play",
+    "played_at": "2026-04-20 14:20:57",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "08",
+    "name": "Counting Stars",
+    "artist": "OneRepublic",
+    "action": "play",
+    "played_at": "2026-04-20 14:24:14",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "09",
+    "name": "Stay With Me",
+    "artist": "Sam Smith",
+    "action": "play",
+    "played_at": "2026-04-20 14:24:16",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "10",
+    "name": "Photograph",
+    "artist": "Ed Sheeran",
+    "action": "play",
+    "played_at": "2026-04-20 14:24:17",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "11",
+    "name": "Let Her Go",
+    "artist": "Passenger",
+    "action": "play",
+    "played_at": "2026-04-20 14:24:21",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:01",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:11",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:11",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:12",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "05",
+    "name": "You've Got a Friend",
+    "artist": "James Taylor",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:12",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "06",
+    "name": "Hello",
+    "artist": "Adele",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:13",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "07",
+    "name": "Rolling in the Deep",
+    "artist": "Adele",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:14",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "08",
+    "name": "Counting Stars",
+    "artist": "OneRepublic",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:15",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "09",
+    "name": "Stay With Me",
+    "artist": "Sam Smith",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:16",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "10",
+    "name": "Photograph",
+    "artist": "Ed Sheeran",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:17",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "11",
+    "name": "Let Her Go",
+    "artist": "Passenger",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:20",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "12",
+    "name": "Counting Stars",
+    "artist": "OneRepublic",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:21",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-20 14:25:24",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "play",
+    "played_at": "2026-04-20 14:27:36",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-20 14:27:37",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-20 14:27:39",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "05",
+    "name": "You've Got a Friend",
+    "artist": "James Taylor",
+    "action": "play",
+    "played_at": "2026-04-20 14:27:44",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "15",
+    "name": "Shape of You",
+    "artist": "Ed Sheeran",
+    "action": "play",
+    "played_at": "2026-04-20 14:28:13",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "create",
+    "played_at": "2026-04-20 14:36:48",
+    "source": "manage"
   }
 ]
