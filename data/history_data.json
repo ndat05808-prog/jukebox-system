@@ -790,5 +790,189 @@
     "action": "create",
     "played_at": "2026-04-20 14:36:48",
     "source": "manage"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-20 14:37:15",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "update_lyrics",
+    "played_at": "2026-04-20 14:38:12",
+    "source": "manage"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "clear_lyrics",
+    "played_at": "2026-04-20 14:40:14",
+    "source": "manage"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "update_lyrics",
+    "played_at": "2026-04-20 14:40:32",
+    "source": "manage"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "update_lyrics",
+    "played_at": "2026-04-20 14:40:55",
+    "source": "manage"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "clear_lyrics",
+    "played_at": "2026-04-20 14:41:14",
+    "source": "manage"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "update_lyrics",
+    "played_at": "2026-04-20 14:41:17",
+    "source": "manage"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-24 10:09:11",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-24 10:09:15",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "05",
+    "name": "You've Got a Friend",
+    "artist": "James Taylor",
+    "action": "play",
+    "played_at": "2026-04-24 10:11:14",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-24 10:14:19",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "play",
+    "played_at": "2026-04-24 10:24:55",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "play",
+    "played_at": "2026-04-24 10:25:16",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "play",
+    "played_at": "2026-04-24 10:25:18",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "play",
+    "played_at": "2026-04-24 10:25:21",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-24 10:50:14",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-24 10:50:21",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "action": "play",
+    "played_at": "2026-04-24 10:50:28",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "action": "play",
+    "played_at": "2026-04-24 10:50:30",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-24 10:50:31",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-24 10:50:35",
+    "source": "playlist"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "action": "play",
+    "played_at": "2026-04-24 10:50:38",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-24 10:50:39",
+    "source": "playlist"
   }
 ]

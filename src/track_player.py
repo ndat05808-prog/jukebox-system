@@ -17,11 +17,11 @@ from .validation import get_valid_rating, normalise_track_number
 
 
 NAV_ITEMS = [
-    ("now_playing", "♪", "Now Playing"),
-    ("library", "≡", "Library"),
-    ("manage", "✎", "Manage"),
-    ("playlists", "♫", "Playlists"),
-    ("statistics", "▤", "Statistics"),
+    ("now_playing", "♪", "Manage Playback"),
+    ("library", "≡", "Manage Library"),
+    ("manage", "✎", "Manage Tracks"),
+    ("playlists", "♫", "Manage Playlists"),
+    ("statistics", "▤", "Manage Statistics"),
 ]
 
 
@@ -679,10 +679,10 @@ class NowPlayingPage:
         header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 18))
         header.columnconfigure(0, weight=1)
 
-        ttk.Label(header, text="Now Playing", style="Hero.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(header, text="Manage Playback", style="Hero.TLabel").grid(row=0, column=0, sticky="w")
         ttk.Label(
             header,
-            text="Enjoy your music — lyrics, cover art and metadata in one glance.",
+            text="Control playback, view lyrics, cover art and track details in one place.",
             style="Muted.TLabel",
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
 
@@ -692,7 +692,7 @@ class NowPlayingPage:
         left.columnconfigure(0, weight=1)
         self.left_card = left
 
-        self.tag_lbl = ttk.Label(left, text="◈  NOW PLAYING", style="Tag.TLabel")
+        self.tag_lbl = ttk.Label(left, text="◈  MANAGE PLAYBACK", style="Tag.TLabel")
         self.tag_lbl.grid(row=0, column=0, sticky="w", pady=(0, 14))
 
         cover_wrap = ttk.Frame(left, style="Card.TFrame")
@@ -923,10 +923,10 @@ class LibraryPage:
         header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
         header.columnconfigure(0, weight=1)
 
-        ttk.Label(header, text="Library", style="Hero.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(header, text="Manage Library", style="Hero.TLabel").grid(row=0, column=0, sticky="w")
         ttk.Label(
             header,
-            text="Browse, search and filter your entire track collection.",
+            text="Browse, search, filter and play tracks from your music library.",
             style="Muted.TLabel",
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
 
