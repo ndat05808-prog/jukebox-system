@@ -13,19 +13,19 @@ def test_library_item_stores_name_artist_and_default_values():
 def test_stars_returns_the_correct_number_of_stars():
     item = LibraryItem("Song B", "Artist B", 4)
 
-    assert item.stars() == "****"
+    assert item.stars() == "★★★★☆"
 
 
-def test_stars_returns_an_empty_string_when_rating_is_zero():
+def test_stars_returns_five_empty_stars_when_rating_is_zero():
     item = LibraryItem("Song C", "Artist C", 0)
 
-    assert item.stars() == ""
+    assert item.stars() == "☆☆☆☆☆"
 
 
 def test_info_returns_name_artist_and_stars():
     item = LibraryItem("Song D", "Artist D", 3)
 
-    assert item.info() == "Song D - Artist D ***"
+    assert item.info() == "Song D - Artist D ★★★☆☆"
 
 
 def test_increment_play_count_increases_value():

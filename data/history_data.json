@@ -974,5 +974,85 @@
     "action": "play",
     "played_at": "2026-04-24 10:50:39",
     "source": "playlist"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-27 22:16:47",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "02",
+    "name": "Here Comes the Sun",
+    "artist": "The Beatles",
+    "action": "play",
+    "played_at": "2026-04-27 22:16:50",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "action": "play",
+    "played_at": "2026-04-27 22:16:53",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "04",
+    "name": "Three Little Birds",
+    "artist": "Bob Marley",
+    "action": "play",
+    "played_at": "2026-04-27 22:16:55",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "05",
+    "name": "You've Got a Friend",
+    "artist": "James Taylor",
+    "action": "play",
+    "played_at": "2026-04-27 22:16:58",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-27 22:22:34",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "07",
+    "name": "Rolling in the Deep",
+    "artist": "Adele",
+    "action": "play",
+    "played_at": "2026-04-29 15:53:51",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-04-29 16:22:43",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-29 16:22:47",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "19",
+    "name": "As It Was",
+    "artist": "Harry Styles",
+    "action": "play",
+    "played_at": "2026-04-29 16:26:02",
+    "source": "dashboard"
   }
 ]

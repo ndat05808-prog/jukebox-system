@@ -14,6 +14,7 @@ from .track_statistics import TrackStatistics
 from .update_lyrics import UpdateLyrics
 from .update_tracks import UpdateTracks
 from .validation import get_valid_rating, normalise_track_number
+from .view_tracks import TrackViewer
 
 
 NAV_ITEMS = [
@@ -44,6 +45,7 @@ class JukeBoxApp:
         self._pages: dict[str, ttk.Frame] = {}
         self._active_page = "now_playing"
         self._child_pages: dict[str, object] = {}
+        self._view_tracks_window = None
 
         self._configure_window_size()
         fonts.configure()
@@ -156,17 +158,45 @@ class JukeBoxApp:
 
         ttk.Button(
             sidebar,
+            text="View Tracks",
+            style="Ghost.TButton",
+            command=self.open_view_tracks_window,
+        ).grid(row=5, column=0, sticky="ew", pady=(14, 6))
+
+        ttk.Button(
+            sidebar,
             text="Log Out",
             style="Ghost.TButton",
             command=self.logout,
-        ).grid(row=5, column=0, sticky="ew", pady=(14, 6))
+        ).grid(row=6, column=0, sticky="ew", pady=(6, 6))
 
         ttk.Button(
             sidebar,
             text="Close App",
             style="Danger.TButton",
             command=self.window.destroy,
-        ).grid(row=6, column=0, sticky="ew")
+        ).grid(row=7, column=0, sticky="ew")
+
+    def open_view_tracks_window(self):
+        if self._view_tracks_window is not None:
+            try:
+                if self._view_tracks_window.winfo_exists():
+                    self._view_tracks_window.lift()
+                    self._view_tracks_window.focus_force()
+                    return
+            except tk.TclError:
+                self._view_tracks_window = None
+
+        view_window = tk.Toplevel(self.window)
+        self._view_tracks_window = view_window
+        TrackViewer(view_window)
+
+        def on_close():
+            self._view_tracks_window = None
+            view_window.destroy()
+
+        view_window.protocol("WM_DELETE_WINDOW", on_close)
+
 
     def _build_content_area(self):
         self.content = ttk.Frame(self.window, style="Root.TFrame", padding=(22, 18, 22, 10))
