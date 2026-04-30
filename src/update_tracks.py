@@ -482,9 +482,14 @@ class UpdateTracks:
             self._render_audio_name(None, "No audio assigned.")
 
         self.list_tracks_clicked()
+
+        play_count = lib.get_play_count(track_key)
+
         self._notify_success(
             "Track updated",
-            f"Track {track_key}: '{name}' by {artist} was updated successfully.{cover_status}{audio_status}",
+            f"Track {track_key}: '{name}' by {artist} was updated successfully. "
+            f"New rating: {rating}/5. Play count: {play_count}."
+            f"{cover_status}{audio_status}",
         )
 
         if self.app_ref is not None:

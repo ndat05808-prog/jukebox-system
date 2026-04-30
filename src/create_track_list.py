@@ -675,13 +675,33 @@ class CreateTrackList:
 
     def play_playlist_clicked(self):
         self._remove_missing_tracks(show_status=False)
+
+        # Stop the function if the playlist has no tracks.
         if len(self.playlist) == 0:
             self.status_lbl.configure(text="The playlist is empty. Add at least one track first.")
             return
 
-        self.current_index = 0
-        self._autoplay = True
-        self._play_current_track(source="playlist")
+        audio_player.stop()
+        self._reset_playback_state()
+
+        played_count = 0
+
+        for track_key in self.playlist:
+            if lib.increment_play_count(track_key, auto_save=False):
+                lib.add_history_entry(track_key, source="playlist", action="play")
+                played_count += 1
+
+        lib.save_library()
+
+        self.refresh_playlist_tree()
+        self.list_tracks_clicked()
+
+        if self.app_ref is not None:
+            self.app_ref.refresh_library()
+
+        self.status_lbl.configure(
+            text=f"Simulated playlist play complete: {played_count} track(s) had their play count increased by 1."
+        )
 
     def pause_resume_clicked(self):
         self._remove_missing_tracks(show_status=False)

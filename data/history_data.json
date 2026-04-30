@@ -1054,5 +1054,157 @@
     "action": "play",
     "played_at": "2026-04-29 16:26:02",
     "source": "dashboard"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-29 21:42:55",
+    "source": "playlist"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-29 21:43:11",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-29 21:43:19",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-29 21:43:20",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-29 21:43:21",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-29 21:43:22",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "03",
+    "name": "Count on Me",
+    "artist": "Bruno Mars",
+    "action": "play",
+    "played_at": "2026-04-30 18:59:52",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-30 20:14:30",
+    "source": "playlist"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-30 20:14:30",
+    "source": "playlist"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-30 20:14:35",
+    "source": "playlist"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-30 20:14:35",
+    "source": "playlist"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-30 20:14:37",
+    "source": "playlist"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-30 20:14:37",
+    "source": "playlist"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-30 20:14:39",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-30 20:15:15",
+    "source": "playlist_load"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-30 20:15:20",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "21",
+    "name": "Haru Haru (하루하루 – Day by Day)",
+    "artist": "G-Dragon",
+    "action": "play",
+    "played_at": "2026-04-30 20:15:23",
+    "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "update",
+    "played_at": "2026-04-30 20:16:33",
+    "source": "manage"
+  },
+  {
+    "track_key": "13",
+    "name": "See You Again",
+    "artist": "Wiz Khalifa ft. Charlie Puth",
+    "action": "play",
+    "played_at": "2026-04-30 20:19:58",
+    "source": "playlist_skip"
   }
 ]
