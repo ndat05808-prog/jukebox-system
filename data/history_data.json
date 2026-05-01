@@ -1206,5 +1206,13 @@
     "action": "play",
     "played_at": "2026-04-30 20:19:58",
     "source": "playlist_skip"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-05-01 23:37:17",
+    "source": "dashboard"
   }
 ]

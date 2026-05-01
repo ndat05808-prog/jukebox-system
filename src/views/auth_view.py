@@ -1,14 +1,14 @@
+"""Authentication screen view (sign-in / sign-up forms)."""
+
 from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
 
-from . import auth_manager
 from . import font_manager as fonts
-from .track_player import JukeBoxApp
 
 
-class AuthApp:
+class AuthView:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("JukeBox — Sign in")
@@ -21,6 +21,9 @@ class AuthApp:
         self._show_sign_in_password = False
         self._show_sign_up_password = False
         self._show_sign_up_confirm = False
+
+        self.on_sign_in_clicked = None
+        self.on_sign_up_clicked = None
 
         self._build_ui()
         self.show_sign_in()
@@ -195,20 +198,6 @@ class AuthApp:
         )
         self.status_lbl.grid(row=4, column=0, sticky="ew", pady=(18, 0))
 
-    def _build_labelled_entry(self, parent, label: str, show: str | None = None):
-        ttk.Label(
-            parent,
-            text=label,
-            background=fonts.CARD,
-            foreground=fonts.MUTED,
-            font=fonts.ff(9, "bold"),
-        ).grid(sticky="w")
-
-        entry_wrap = ttk.Frame(parent, style="Soft.TFrame", padding=(12, 0))
-        entry_wrap.grid(sticky="ew", pady=(6, 12))
-        entry_wrap.columnconfigure(1, weight=1)
-        return entry_wrap
-
     def _build_sign_in_form(self):
         frame = self.sign_in_frame
         frame.columnconfigure(0, weight=1)
@@ -250,7 +239,7 @@ class AuthApp:
 
         self.login_password = ttk.Entry(pass_wrap, show="•")
         self.login_password.grid(row=0, column=1, sticky="ew", pady=8)
-        self.login_password.bind("<Return>", lambda e: self.sign_in_clicked())
+        self.login_password.bind("<Return>", lambda e: self._fire_sign_in())
 
         self.login_password_toggle = ttk.Button(
             pass_wrap,
@@ -264,7 +253,7 @@ class AuthApp:
             frame,
             text="Sign In →",
             style="Neon.TButton",
-            command=self.sign_in_clicked,
+            command=self._fire_sign_in,
         ).grid(row=4, column=0, sticky="ew", ipady=6)
 
         ttk.Label(
@@ -334,7 +323,7 @@ class AuthApp:
         ).grid(row=0, column=0, padx=(0, 6))
         self.signup_confirm = ttk.Entry(c_wrap, show="•")
         self.signup_confirm.grid(row=0, column=1, sticky="ew", pady=8)
-        self.signup_confirm.bind("<Return>", lambda e: self.sign_up_clicked())
+        self.signup_confirm.bind("<Return>", lambda e: self._fire_sign_up())
         self.signup_confirm_toggle = ttk.Button(
             c_wrap,
             text="Show",
@@ -347,7 +336,7 @@ class AuthApp:
             frame,
             text="Create Account →",
             style="Neon.TButton",
-            command=self.sign_up_clicked,
+            command=self._fire_sign_up,
         ).grid(row=6, column=0, sticky="ew", ipady=6)
 
         ttk.Label(
@@ -355,6 +344,14 @@ class AuthApp:
             text="Already registered? Switch to Sign In above.",
             style="CardMuted.TLabel",
         ).grid(row=7, column=0, sticky="w", pady=(14, 0))
+
+    def _fire_sign_in(self):
+        if callable(self.on_sign_in_clicked):
+            self.on_sign_in_clicked()
+
+    def _fire_sign_up(self):
+        if callable(self.on_sign_up_clicked):
+            self.on_sign_up_clicked()
 
     def _toggle_sign_in_password(self):
         self._show_sign_in_password = not self._show_sign_in_password
@@ -397,51 +394,18 @@ class AuthApp:
         self.subheader_lbl.configure(text="Start building your own music library.")
         self.set_status("", "info")
 
-    def open_main_app(self, user: dict):
-        display_name = user.get("display_name") or user.get("username") or "User"
+    def get_login_inputs(self) -> tuple[str, str]:
+        return self.login_username.get().strip(), self.login_password.get().strip()
+
+    def get_signup_inputs(self) -> tuple[str, str, str]:
+        return (
+            self.signup_username.get().strip(),
+            self.signup_password.get().strip(),
+            self.signup_confirm.get().strip(),
+        )
+
+    def close(self):
         self.root.destroy()
-
-        app = JukeBoxApp(current_user=display_name, on_logout=launch_auth_app)
-        app.run()
-
-    def sign_in_clicked(self):
-        username = self.login_username.get().strip()
-        password = self.login_password.get().strip()
-
-        success, message, user = auth_manager.authenticate_user(username, password)
-        if not success:
-            self.set_status(message, "error")
-            return
-
-        self.set_status(message, "success")
-        self.open_main_app(user)
-
-    def sign_up_clicked(self):
-        username = self.signup_username.get().strip()
-        password = self.signup_password.get().strip()
-        confirm_password = self.signup_confirm.get().strip()
-
-        if password != confirm_password:
-            self.set_status("Passwords do not match.", "error")
-            return
-
-        success, message = auth_manager.create_user(username, password)
-        if not success:
-            self.set_status(message, "error")
-            return
-
-        login_success, login_message, user = auth_manager.authenticate_user(username, password)
-        if not login_success or user is None:
-            self.set_status(login_message, "error")
-            return
-
-        self.set_status("Account created successfully.", "success")
-        self.open_main_app(user)
 
     def run(self):
         self.root.mainloop()
-
-
-def launch_auth_app():
-    app = AuthApp()
-    app.run()

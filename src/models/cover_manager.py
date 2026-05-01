@@ -5,7 +5,7 @@ import tkinter as tk
 
 from . import track_library as lib
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 ASSETS_DIR = PROJECT_DIR / "assets"
 COVERS_DIR = ASSETS_DIR / "covers"
 

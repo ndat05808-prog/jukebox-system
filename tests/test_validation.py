@@ -1,4 +1,4 @@
-from src.validation import (
+from src.models.validation import (
     get_valid_position,
     get_valid_rating,
     normalise_playlist_name,

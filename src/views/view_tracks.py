@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 
-from . import cover_manager
+from ..models import cover_manager
 from . import font_manager as fonts
-from . import track_library as lib
+from ..models import track_library as lib
 from .gui_helpers import clear_tree, setup_page_container, stars_text
-from .library_item import AlbumTrack
-from .validation import get_valid_rating, normalise_track_number
+from ..models.library_item import AlbumTrack
+from ..models.validation import get_valid_rating, normalise_track_number
 
 
 class TrackViewer:

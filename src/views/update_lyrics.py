@@ -2,9 +2,9 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from . import font_manager as fonts
-from . import track_library as lib
+from ..models import track_library as lib
 from .gui_helpers import bind_two_column_stacking, clear_tree, setup_page_container, stars_text
-from .validation import normalise_track_number
+from ..models.validation import normalise_track_number
 
 
 class UpdateLyrics:
