@@ -120,7 +120,10 @@ class JukeBoxApp:
 
     def play_track(self, track_key: str, source: str = "dashboard"):
         track_key = normalise_track_number(track_key)
-        if track_key is None or lib.get_name(track_key) is None:
+        if track_key is None:
+            self.status("Track number must contain digits only.")
+            return False
+        if lib.get_name(track_key) is None:
             self.status(f"Track {track_key} does not exist.")
             return False
 
@@ -255,8 +258,10 @@ class JukeBoxApp:
             self._draw_cover_placeholder(self.view.player_cover_canvas, 56, "♪", accent=True)
 
         self.view.play_btn.configure(text="⏸" if self.is_playing else "▶")
-        self.view.time_cur_lbl.configure(text="1:12")
-        self.view.time_total_lbl.configure(text="3:24")
+        self.view.time_cur_lbl.configure(text="0:00")
+        self.view.time_total_lbl.configure(
+            text=self._format_time(audio_player.get_duration_seconds())
+        )
 
     def _on_volume_change(self, value):
         try:

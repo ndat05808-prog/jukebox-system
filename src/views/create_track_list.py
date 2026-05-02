@@ -9,7 +9,7 @@ from ..models import track_library as lib
 from .gui_helpers import bind_two_column_stacking, clear_tree, setup_page_container, stars_text
 from ..models.validation import get_valid_position, normalise_playlist_name, normalise_track_number
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 PLAYLIST_DIR = PROJECT_DIR / "playlists"
 PLAYLIST_DIR.mkdir(exist_ok=True)
 

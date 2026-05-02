@@ -13,6 +13,7 @@ _initialised = False
 _current_path: Path | None = None
 _duration_seconds: float = 0.0
 _paused: bool = False
+_seek_offset: float = 0.0
 
 
 def available() -> bool:
@@ -49,7 +50,7 @@ def _probe_duration(path: Path) -> float:
 
 
 def load_and_play(path: Path | str) -> bool:
-    global _current_path, _duration_seconds, _paused
+    global _current_path, _duration_seconds, _paused, _seek_offset
     if not _ensure_init():
         return False
 
@@ -69,6 +70,7 @@ def load_and_play(path: Path | str) -> bool:
     _current_path = src
     _duration_seconds = _probe_duration(src)
     _paused = False
+    _seek_offset = 0.0
     return True
 
 
@@ -87,12 +89,13 @@ def resume() -> None:
 
 
 def stop() -> None:
-    global _paused, _current_path, _duration_seconds
+    global _paused, _current_path, _duration_seconds, _seek_offset
     if _initialised and pygame is not None:
         pygame.mixer.music.stop()
     _paused = False
     _current_path = None
     _duration_seconds = 0.0
+    _seek_offset = 0.0
 
 
 def is_loaded() -> bool:
@@ -121,15 +124,15 @@ def get_position_seconds() -> float:
         return 0.0
     pos_ms = pygame.mixer.music.get_pos()
     if pos_ms < 0:
-        return 0.0
-    return pos_ms / 1000.0
-
+        return _seek_offset
+    return _seek_offset + pos_ms / 1000.0
 
 def get_duration_seconds() -> float:
     return _duration_seconds
 
 
 def seek(seconds: float) -> bool:
+    global _seek_offset
     if not _ensure_init() or _current_path is None:
         return False
     seconds = max(0.0, seconds)
@@ -139,4 +142,5 @@ def seek(seconds: float) -> bool:
             pygame.mixer.music.pause()
     except pygame.error:
         return False
+    _seek_offset = seconds
     return True

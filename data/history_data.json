@@ -1214,5 +1214,21 @@
     "action": "play",
     "played_at": "2026-05-01 23:37:17",
     "source": "dashboard"
+  },
+  {
+    "track_key": "01",
+    "name": "What a Wonderful World",
+    "artist": "Louis Armstrong",
+    "action": "play",
+    "played_at": "2026-05-02 14:16:09",
+    "source": "dashboard"
+  },
+  {
+    "track_key": "08",
+    "name": "Counting Stars",
+    "artist": "OneRepublic",
+    "action": "play",
+    "played_at": "2026-05-02 14:16:11",
+    "source": "dashboard"
   }
 ]

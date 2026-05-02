@@ -146,7 +146,6 @@ def create_user(username: str, password: str, display_name: str = "") -> tuple[b
 
 def authenticate_user(username: str, password: str) -> tuple[bool, str, dict | None]:
     username = username.strip()
-    password = password.strip()
 
     if username == "" or password == "":
         return False, "Please enter both username and password.", None

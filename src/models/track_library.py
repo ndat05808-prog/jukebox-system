@@ -287,7 +287,7 @@ def update_track_info(
     cover_path = item.cover_path
     lyrics = item.lyrics
     audio_path = item.audio_path
-    should_be_album_track = isinstance(item, AlbumTrack) or album != "" or year is not None
+    should_be_album_track = album != "" or year is not None
     if should_be_album_track:
         new_item = AlbumTrack(name, artist, rating, play_count, album, year, cover_path, lyrics, audio_path)
     else:
