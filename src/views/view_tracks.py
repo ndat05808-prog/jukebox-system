@@ -448,8 +448,6 @@ class TrackViewer:
     def _populate_tree(self, records):
         # Always wipe before inserting - otherwise filtering would
         # append new rows on top of the old ones.
-        clear_tree(self.tree)
-
         # One Treeview row per record. We coerce missing album/year
         # to an em-dash so empty cells read cleanly instead of "None".
         for record in records:
